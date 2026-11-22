@@ -1,4 +1,11 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
 <title>Tap for a Sentence</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,6 +35,9 @@
 :root[data-theme="dark"] { --base: #14131c; --card: #201e2cee; --sheet: #1d1b28; --fg: #f2f0fb; --muted: #a6a2c0; --line: #ffffff16; --locked: #2c2a3b; color-scheme: dark; }
 
 html, body { height: 100%; }
+/* fast repeated taps must not trigger the browser's double-tap zoom (pinch zoom still works) */
+html, body, button, .card, .wfx, .overlay, .library { touch-action: manipulation; }
+button { -webkit-user-select: none; user-select: none; }
 body {
   background: var(--bg);
   color: var(--fg);
@@ -423,6 +433,154 @@ kbd { font-family: var(--body); font-weight: 800; border: 1px solid var(--line);
 }
 .t-diamond .ptitle { font-weight: 800; text-transform: uppercase; letter-spacing: .02em; font-size: clamp(1.7rem, 7.5vw, 2.6rem); text-shadow: 0 0 24px #a8f4ff99; }
 
+/* ---------- pieces used inside the rare-find moments ---------- */
+.qline { margin: 0; font: 800 1.2rem/1.3 var(--display); text-wrap: balance; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font: 800 .88rem var(--body);
+  color: var(--o-fg);
+  background: color-mix(in srgb, var(--o-fg) 10%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--o-accent) 45%, transparent);
+  border-radius: 999px;
+  padding: 9px 14px;
+  cursor: pointer;
+}
+.chip.on { background: var(--o-accent); color: var(--o-btnfg); border-color: var(--o-accent); }
+.chip.sw span { width: 14px; height: 14px; border-radius: 50%; border: 1px solid #0003; }
+.chips.big .chip { padding: 14px 18px; font-size: 1rem; }
+.ghost-o { margin-top: 6px; font: 800 .9rem var(--body); color: var(--o-fg); background: transparent; border: 1.5px solid var(--o-accent); border-radius: 999px; padding: 10px 16px; cursor: pointer; }
+.cert-engrave { margin: 0; font: italic 700 1.1rem Georgia, "Times New Roman", serif; }
+.constel-wrap { width: 100%; }
+.constel-wrap:empty { display: none; }
+.constel { display: block; width: 100%; max-width: 280px; height: auto; margin: 0 auto; border-radius: 16px; background: radial-gradient(circle, #1a0d33, #05020c); }
+.constel .cl line { stroke-dasharray: 120; animation: cdraw 1.6s ease both; }
+@keyframes cdraw { from { stroke-dashoffset: 120; } }
+.constel .cs circle { transform-box: fill-box; transform-origin: center; animation: wtwinkle 2.4s ease-in-out infinite; }
+.gem-preview, .gem-final { width: 130px; }
+.gem-svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 0 14px #a8f4ff88); }
+.gem-svg .glint { transform-box: fill-box; transform-origin: center; animation: wtwinkle 1.8s ease-in-out infinite; }
+.dragon-art { width: 160px; animation: arrive .8s cubic-bezier(.2,1.4,.4,1); }
+.dragon-svg { display: block; width: 100%; height: auto; }
+.egg-mini { font-size: 40px; line-height: 1; animation: eggshake 1.4s ease-in-out infinite; }
+.mini-art { display: block; width: 84px; margin: 4px 0; }
+.mini-art svg { display: block; width: 100%; height: auto; }
+.ember { position: absolute; bottom: 30%; font-size: 16px; pointer-events: none; animation: emberUp 1.2s ease-out forwards; }
+@keyframes emberUp { to { transform: translateY(-120px) scale(.4); opacity: 0; } }
+.fire-btn {
+  --heat: 0;
+  position: relative;
+  font-size: calc(64px + var(--heat) * 64px);
+  line-height: 1;
+  background: none;
+  border: 0;
+  padding: 10px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  filter: drop-shadow(0 0 calc(var(--heat) * 40px) #ff6a2b) saturate(calc(1 + var(--heat)));
+  transition: font-size .12s ease-out;
+}
+.fire-btn:disabled { cursor: default; opacity: .9; }
+.fire-btn.fire-hit { animation: firehit .12s ease-out; }
+@keyframes firehit { 50% { transform: scale(.88) rotate(-4deg); } }
+.fire-stats { display: grid; grid-template-columns: auto auto auto auto; gap: 4px 8px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.fire-stats span { font: 800 2rem var(--display); color: var(--o-accent); min-width: 2.2ch; text-align: right; }
+.fire-stats small { font-weight: 800; opacity: .8; margin-right: 10px; }
+.fire-meter { width: 100%; max-width: 300px; height: 10px; border-radius: 6px; background: #ffffff22; overflow: hidden; }
+.fire-meter span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ffcf5a, #ff6a2b, #ff2b5d); transition: width .1s linear; }
+.fire-rank-emoji { margin: 0; font-size: 56px; line-height: 1; }
+.stage { position: relative; }
+/* once the hands-on part starts, shrink the header so the interaction fits on a phone screen */
+.overlay.stepping .halo, .overlay.stepping .pline, .overlay.stepping .greet, .overlay.stepping .paward { display: none; }
+.overlay.stepping .ptitle { font-size: clamp(1.3rem, 5.5vw, 1.9rem); }
+.overlay.stepping .prize { gap: 12px; animation: none; }
+
+/* 1 in 500,000,000: heavenly gold and white */
+.t-ascend {
+  --o-bg: radial-gradient(circle at 50% 28%, #fffdf2 0%, #ffeab0 32%, #f1bd55 68%, #9a6414 100%);
+  --o-texture: repeating-conic-gradient(from 0deg at 50% 28%, #ffffff22 0 4deg, transparent 4deg 14deg);
+  --o-fg: #3a2508;
+  --o-accent: #a8650a;
+  --o-btnfg: #fffaf0;
+  --o-title: #7a4a06;
+  --o-font: "Cinzel", Georgia, serif;
+  --o-disc: radial-gradient(circle, #ffffff 45%, #ffe9a8 100%);
+  --o-halo: conic-gradient(#ffffff, #ffe08a, #fff6d6, #f5c542, #ffffff);
+}
+.t-ascend .ptitle { font-weight: 900; letter-spacing: .06em; text-shadow: 0 0 30px #fff; }
+/* 1 in 250,000,000: old steel and gold */
+.t-vault {
+  --o-bg: linear-gradient(160deg, #171511 0%, #2e281c 55%, #4a3d22 100%);
+  --o-texture: repeating-linear-gradient(90deg, #ffffff06 0 2px, transparent 2px 9px), radial-gradient(circle at 50% 35%, #e8c46322, transparent 55%);
+  --o-fg: #f6eccf;
+  --o-accent: #e8c463;
+  --o-btnfg: #2a200a;
+  --o-font: "Unbounded", "Segoe UI", sans-serif;
+  --o-disc: radial-gradient(circle, #3a3222 40%, #15120c 100%);
+  --o-halo: conic-gradient(#e8c463, #8a8a8a, #fff3c4, #6b6b6b, #e8c463);
+}
+.t-vault .ptitle { font-weight: 800; text-transform: uppercase; font-size: clamp(1.6rem, 7vw, 2.4rem); }
+/* 1 in 100,000,000: alien green signal */
+.t-alien {
+  --o-bg: radial-gradient(circle at 50% 35%, #0d3a2a 0%, #04140e 55%, #010604 100%);
+  --o-texture: repeating-linear-gradient(0deg, #3df2a00a 0 2px, transparent 2px 4px);
+  --o-fg: #d8ffe9;
+  --o-accent: #3df2a0;
+  --o-btnfg: #022015;
+  --o-font: "Unbounded", "Segoe UI", sans-serif;
+  --o-disc: radial-gradient(circle, #0a3a26 40%, #02100a 100%);
+  --o-halo: conic-gradient(#3df2a0, #a46bff, #4db8ff, #3df2a0);
+}
+.t-alien .ptitle { font-weight: 800; color: #3df2a0; text-shadow: 0 0 24px #3df2a0aa; }
+/* 1 in 10,000,000: parchment treasure map */
+.t-map {
+  --o-bg: radial-gradient(circle at 50% 40%, #f6e7c1 0%, #e4c48a 55%, #b07c3e 100%);
+  --o-texture: radial-gradient(circle at 20% 30%, #8a5a2a18 0 40px, transparent 41px), radial-gradient(circle at 80% 70%, #8a5a2a14 0 60px, transparent 61px);
+  --o-fg: #3a2410;
+  --o-accent: #8a3b12;
+  --o-btnfg: #fff3de;
+  --o-title: #5a2d0c;
+  --o-font: "Pacifico", "Segoe Script", cursive;
+  --o-disc: radial-gradient(circle, #fbefd2 50%, #d9b273 100%);
+  --o-halo: conic-gradient(#8a3b12, #e8b04a, #5a2d0c, #e8b04a, #8a3b12);
+}
+
+/* game pieces for the four new finds */
+.perk-grid { display: grid; gap: 10px; width: 100%; }
+.perk { display: grid; grid-template-columns: 48px 1fr; grid-template-rows: auto auto; column-gap: 12px; text-align: left; align-items: center; padding: 14px; border-radius: 18px; border: 2px solid #a8650a55; background: #ffffffb0; color: #3a2508; cursor: pointer; font: inherit; }
+.perk:hover, .perk:focus-visible { border-color: #a8650a; background: #fff; }
+.perk-emoji { grid-row: span 2; font-size: 36px; text-align: center; }
+.perk-name { font: 800 1.05rem "Cinzel", Georgia, serif; }
+.perk-name small { font: 700 .75rem var(--body); color: #a8650a; }
+.perk-desc { font-size: .85rem; font-weight: 700; opacity: .85; }
+.vault-rows { display: flex; flex-direction: column; gap: 6px; }
+.vrow { display: flex; gap: 6px; justify-content: center; }
+.vcell { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 10px; font: 800 1.2rem var(--o-font); background: #ffffff12; border: 1.5px solid #e8c46344; color: var(--o-fg); }
+.vrow.now .vcell { border-color: var(--o-accent); }
+.vcell.empty { opacity: .35; }
+.vcell.g { background: #2fbf71; border-color: #2fbf71; color: #fff; }
+.vcell.y { background: #e8b31a; border-color: #e8b31a; color: #2a200a; }
+.vcell.x { background: #3a3a3a; border-color: #555; color: #bbb; }
+.keypad { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; width: 100%; max-width: 330px; }
+.key { font: 800 1.1rem var(--o-font); padding: 12px 0; border-radius: 12px; border: 1.5px solid #e8c46377; background: #ffffff10; color: var(--o-fg); cursor: pointer; }
+.key:disabled { opacity: .35; cursor: default; }
+.key.wide { grid-column: span 3; }
+.key.go { background: var(--o-accent); color: var(--o-btnfg); border-color: var(--o-accent); }
+.simon { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: min(240px, 100%); }
+.pad { aspect-ratio: 1; border-radius: 22px; border: 2px solid var(--pc); background: color-mix(in srgb, var(--pc) 22%, #02100a); cursor: pointer; transition: background .08s, box-shadow .08s, transform .08s; }
+.pad.lit { background: var(--pc); box-shadow: 0 0 34px var(--pc); transform: scale(1.04); }
+.sand { display: grid; gap: 6px; width: min(300px, 100%); }
+.tile { aspect-ratio: 1; border-radius: 10px; border: 1.5px solid #8a5a2a55; background: radial-gradient(circle at 35% 30%, #f8e3b0, #e0bd7c); font-size: 1.3rem; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.tile:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+.tile.dug { background: #c79a5c; }
+.tile.hit { background: #ffd84d; box-shadow: 0 0 24px #ffd84d; }
+.tile.miss { background: #f3c9a8; }
+.tile.shake { animation: eggshake .3s; }
+.t-map .shint, .t-map .qline { color: #3a2410; }
+
 /* 1 in 100,000 */
 .t-egg {
   --o-bg: radial-gradient(circle at 50% 40%, #1f6b55 0%, #0b2f27 55%, #04140f 100%);
@@ -682,6 +840,80 @@ kbd { font-family: var(--body); font-weight: 800; border: 1px solid var(--line);
 .skipnext { font: 800 .85rem var(--body); color: var(--o-fg); background: none; border: 0; padding: 6px 4px; text-decoration: underline; text-underline-offset: 3px; opacity: .85; cursor: pointer; }
 .t-clover .skipnext { color: #1e6b2a; }
 
+/* ---------- powers: boost bar, bag, guide ---------- */
+.boosts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 0; }
+.boosts:empty { display: none; }
+.boost-total { font: 800 .8rem var(--body); padding: 5px 10px; border-radius: 999px; background: color-mix(in srgb, var(--mood) 20%, transparent); color: var(--fg); font-variant-numeric: tabular-nums; }
+.boost {
+  display: inline-flex; align-items: center; gap: 5px;
+  font: 800 .78rem var(--body); color: var(--fg);
+  padding: 5px 10px; border-radius: 999px;
+  border: 1.5px solid var(--c);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 30%, transparent) calc(var(--f) * 100%), transparent 0);
+  font-variant-numeric: tabular-nums;
+}
+.boosts.in-bag { justify-content: flex-start; }
+.haul-chip {
+  font: 800 .82rem var(--body);
+  color: #3a2508;
+  background: linear-gradient(90deg, #ffd84d, #ffb020);
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  box-shadow: 0 0 0 3px #ffb02040, 0 4px 14px -4px #ffb020;
+  animation: haulPulse 1.6s ease-in-out infinite;
+  font-variant-numeric: tabular-nums;
+}
+@keyframes haulPulse { 50% { box-shadow: 0 0 0 6px #ffb02022, 0 4px 18px -2px #ffb020; } }
+@media (prefers-reduced-motion: reduce) { .haul-chip { animation: none; } }
+.bag-tabs { display: flex; gap: 6px; padding: 4px; border-radius: 999px; background: var(--locked); align-self: flex-start; }
+.bag-tab { font: 800 .88rem var(--body); color: var(--muted); background: transparent; border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+.bag-tab.on { background: var(--sheet); color: var(--fg); box-shadow: 0 2px 8px #0002; }
+.next-drops { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .82rem; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+.next-drops b { color: var(--fg); }
+.bag-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.bag-item {
+  display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center;
+  padding: 10px 12px; border-radius: 16px;
+  border: 1.5px solid color-mix(in srgb, var(--c) 55%, transparent);
+  background: color-mix(in srgb, var(--c) 8%, transparent);
+}
+.bi-emoji { font-size: 30px; text-align: center; line-height: 1; }
+.bi-info { min-width: 0; }
+.bi-name { margin: 0; font: 800 1rem var(--display); }
+.bi-count { font: 800 .8rem var(--body); color: var(--muted); }
+.bi-desc { margin: 3px 0 0; font-size: .82rem; color: var(--muted); font-weight: 700; line-height: 1.4; }
+.bi-use { font: 800 .88rem var(--body); color: #fff; background: var(--c); border: 0; border-radius: 999px; padding: 9px 16px; cursor: pointer; box-shadow: 0 3px 0 color-mix(in srgb, var(--c) 60%, #000); }
+.bi-use:active { transform: translateY(2px); box-shadow: 0 1px 0 color-mix(in srgb, var(--c) 60%, #000); }
+.bi-odds { text-align: right; font: 800 .95rem var(--display); color: var(--fg); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bi-odds small { display: block; font: 700 .7rem var(--body); color: var(--muted); }
+.rar { display: inline-block; font: 800 .66rem var(--body); letter-spacing: .08em; text-transform: uppercase; color: #fff; padding: 2px 7px; border-radius: 999px; margin-right: 4px; vertical-align: 1px; }
+.rar-common { background: #8f98a8; } .rar-uncommon { background: #2fbf71; } .rar-rare { background: #4d7cff; }
+.rar-epic { background: #a46bff; } .rar-legendary { background: #ff9f1a; }
+.rar-mythic { background: linear-gradient(90deg, #ff4fd8, #ffb020, #3df2a0, #4d7cff, #ff4fd8); background-size: 300% 100%; animation: shimmer 3s linear infinite; }
+.bag-item.guide { grid-template-columns: 44px 1fr auto; }
+.guide-rule { margin: -6px 0 2px; font-size: .85rem; font-weight: 700; color: var(--muted); }
+.bag-empty { margin: 0; padding: 18px; text-align: center; border: 1.5px dashed var(--line); border-radius: 16px; color: var(--muted); font-weight: 700; line-height: 1.5; }
+.wish-choose { display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; padding: 6px 0; }
+.wish-choose .qline { color: var(--fg); }
+.wish-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; width: 100%; }
+.wish-pick { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; border-radius: 16px; border: 1.5px solid var(--line); background: transparent; color: var(--fg); font: 800 .85rem var(--body); cursor: pointer; }
+.wish-pick span { font-size: 28px; }
+.wish-pick small { color: var(--muted); font-size: .7rem; }
+.wish-pick:hover { border-color: var(--mood); }
+/* drop toasts glow by rarity */
+.toast.t-uncommon { box-shadow: 0 18px 40px -18px #0008, 0 0 0 3px #2fbf7166; }
+.toast.t-rare { box-shadow: 0 18px 40px -18px #0008, 0 0 0 3px #4d7cff77; }
+.toast.t-epic { box-shadow: 0 18px 40px -18px #0008, 0 0 0 3px #a46bff99, 0 0 30px #a46bff55; }
+.toast.t-legendary { box-shadow: 0 18px 40px -18px #0008, 0 0 0 3px #ff9f1a, 0 0 40px #ff9f1a77; }
+.toast.t-mythic { border: 3px solid transparent; background: linear-gradient(var(--sheet), var(--sheet)) padding-box, linear-gradient(90deg, #ff4fd8, #ffb020, #3df2a0, #4d7cff, #ff4fd8) border-box; box-shadow: 0 0 50px #ff4fd877; }
+.toast.t-mythic .temoji { animation: tbounce .8s ease-in-out 5; }
+@media (max-width: 420px) {
+  .bag-item, .bag-item.guide { grid-template-columns: 36px 1fr; }
+  .bi-use, .bi-odds { grid-column: 2; justify-self: start; text-align: left; }
+}
+
 /* ---------- award library extra sections ---------- */
 .libh { margin: 8px 0 0; font: 800 .78rem var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .slot.ach .medal { background: color-mix(in srgb, var(--mood) 24%, transparent); box-shadow: none; }
@@ -812,6 +1044,21 @@ kbd { font-family: var(--body); font-weight: 800; border: 1px solid var(--line);
 :root[data-skin="aurora"] { --base: #06171c; --card: #0e282edd; --sheet: #0e282e; --fg: #e4fff8; --muted: #8dc2b6; --line: #ffffff1a; --locked: #183b42; --display: "Unbounded", "Segoe UI", sans-serif; color-scheme: dark;
   --skin-bg: linear-gradient(160deg, #3df2a033, transparent 40%, #a46bff33 70%, transparent); }
 :root[data-skin="aurora"] .sentence { font-size: clamp(1.1rem, 4.2vw, 1.5rem); }
+/* mega-trophy themes: 10M, 100M, 250M, 500M taps */
+:root[data-skin="prism"] { --base: #f4f6ff; --card: #ffffffe6; --sheet: #ffffff; --fg: #23204a; --muted: #6b6894; --line: #23204a1f; --locked: #e6e8f6; --display: "Unbounded", "Segoe UI", sans-serif; color-scheme: light;
+  --skin-bg: conic-gradient(from 200deg at 50% 50%, #ff7ab633, #ffd36b33, #7cf0c033, #6bb6ff33, #b48bff33, #ff7ab633); }
+:root[data-skin="prism"] .card { border: 2px solid transparent; background: linear-gradient(var(--card), var(--card)) padding-box, linear-gradient(120deg, #ff7ab6, #ffd36b, #7cf0c0, #6bb6ff, #b48bff) border-box; }
+:root[data-skin="prism"] .sentence { font-size: clamp(1.1rem, 4.2vw, 1.5rem); }
+:root[data-skin="jade"] { --base: #0b1f18; --card: #12302599; --sheet: #123025; --fg: #e8fff4; --muted: #8fc4ad; --line: #7cf0c033; --locked: #1c3d31; --display: "Cinzel", Georgia, serif; color-scheme: dark;
+  --skin-bg: radial-gradient(circle at 50% 0, transparent 9px, #7cf0c00d 10px 11px, transparent 12px) 0 0 / 26px 15px, radial-gradient(circle at 50% 40%, #2fbf8f33, transparent 60%); }
+:root[data-skin="jade"] .card { border-color: #d4b25a88; box-shadow: 0 0 0 1px #d4b25a44, 0 30px 60px -30px #2fbf8f; }
+:root[data-skin="cosmos"] { --base: #05010f; --card: #140a2acc; --sheet: #140a2a; --fg: #f6efff; --muted: #b3a2dc; --line: #ffffff1c; --locked: #241640; --display: "Unbounded", "Segoe UI", sans-serif; color-scheme: dark;
+  --skin-bg: radial-gradient(1.5px 1.5px at 20% 30%, #fff, transparent) 0 0 / 150px 150px, radial-gradient(1px 1px at 65% 75%, #fff, transparent) 0 0 / 110px 110px, radial-gradient(ellipse at 20% 20%, #ff6bd640, transparent 50%), radial-gradient(ellipse at 80% 80%, #4d7cff40, transparent 55%); }
+:root[data-skin="cosmos"] .sentence { font-size: clamp(1.1rem, 4.2vw, 1.5rem); text-shadow: 0 0 20px #ff6bd666; }
+:root[data-skin="eternal"] { --base: #fffaf0; --card: #fffdf7f0; --sheet: #fffdf7; --fg: #3a2a0a; --muted: #8a7445; --line: #d4a01740; --locked: #f3e8cf; --display: "Cinzel", Georgia, serif; color-scheme: light;
+  --skin-bg: radial-gradient(circle at 50% 30%, #ffe9a866, transparent 60%), repeating-conic-gradient(from 0deg at 50% 30%, #d4a0170a 0 6deg, transparent 6deg 12deg); }
+:root[data-skin="eternal"] .card { border: 2px solid #d4a017; box-shadow: 0 0 0 6px #d4a01722, 0 30px 70px -30px #d4a017; }
+:root[data-skin="eternal"] .sentence { font-weight: 900; }
 :root[data-skin] body { background: var(--skin-bg), var(--bg); }
 
 @media (max-width: 420px) {
@@ -854,8 +1101,10 @@ kbd { font-family: var(--body); font-weight: 800; border: 1px solid var(--line);
     <button id="copy" class="ghost" type="button">Copy</button>
     <button id="share" class="ghost" type="button">Share</button>
     <button id="openLib" class="ghost" type="button">🏆 0/5</button>
+    <button id="openBag" class="ghost" type="button" aria-label="Open your ability bag">🎒 0</button>
   </div>
-  <p class="first-hint" id="firstHint" hidden>Some sentences are 1 in a billion… good luck.</p>
+  <div class="boosts" id="boosts" aria-live="polite"></div>
+  <p class="first-hint" id="firstHint" hidden>Some secrets here are rarer than you can imagine… good luck.</p>
   <p class="hint">or press <kbd>Space</kbd></p>
   <div class="footer">
     <div class="trail" id="trail" aria-label="Emojis you've collected"></div>
@@ -911,6 +1160,24 @@ kbd { font-family: var(--body); font-weight: 800; border: 1px solid var(--line);
     <h3 class="libh">Themes</h3>
     <div class="themes" id="themes"></div>
     <p class="note">Every tap has a tiny chance to reveal a rare find. Awards are saved in this browser.</p>
+  </div>
+</section>
+
+<section class="library" id="bag" role="dialog" aria-modal="true" aria-labelledby="bagTitle" hidden>
+  <div class="shelf">
+    <header>
+      <div>
+        <h2 id="bagTitle">🎒 Ability Bag</h2>
+        <p class="sub">Store your powers and use them whenever you like.</p>
+      </div>
+      <button class="ghost" id="closeBag" type="button">Close</button>
+    </header>
+    <div class="bag-tabs" role="tablist">
+      <button class="bag-tab on" type="button" data-tab="inv" role="tab">Inventory</button>
+      <button class="bag-tab" type="button" data-tab="guide" role="tab">Guide</button>
+    </div>
+    <div id="bagInv"></div>
+    <div id="bagGuide" hidden></div>
   </div>
 </section>
 
@@ -2093,17 +2360,45 @@ const buttonLabels = ["Tap me!","Again!","One more","Hit me","More please","Keep
 const RARES = [
   { id: "singularity", odds: 1e9, emoji: "🌌", color: "#b48bff",
     title: "The Singularity",
-    greet: "Greetings, Chosen One of a Billion.",
+    greet: "Greetings, Chosen One. Few will ever see this.",
     line: "You found the edge of the universe. It was hiding behind this button the whole time.",
     award: "Keeper of the Cosmos",
     claim: "Name your star",
     fx: { mode: "twinkle", chars: ["✦", "✧", "·", "✨"], n: 60, size: [8, 22] } },
+  { id: "ascend", odds: 5e8, emoji: "😇", color: "#e8b13a",
+    title: "Ascension",
+    greet: "You have been chosen.",
+    line: "Half a billion taps, and the light finally found you. Choose a blessing that lasts forever.",
+    award: "The Ascended",
+    claim: "Choose your blessing",
+    fx: { mode: "rise", chars: ["✨", "☁️", "✦"], n: 36, size: [10, 30] } },
+  { id: "vault", odds: 2.5e8, emoji: "🔐", color: "#c9a227",
+    title: "The Lost Vault",
+    greet: "Psst. Nobody has opened this in centuries.",
+    line: "One in 250 million taps finds the door. Crack the code and what's inside is yours.",
+    award: "Vault Breaker",
+    claim: "Crack the code",
+    fx: { mode: "fall", chars: ["🪙", "✦", "💰"], n: 30, size: [14, 28] } },
+  { id: "alien", odds: 1e8, emoji: "🛸", color: "#2fd68a",
+    title: "First Contact",
+    greet: "Beep boop. Hello, human.",
+    line: "A signal from 100 million taps away. Repeat it back so they know you come in peace.",
+    award: "Galactic Ambassador",
+    claim: "Answer the signal",
+    fx: { mode: "twinkle", chars: ["✦", "·", "👽"], n: 45, size: [8, 22] } },
+  { id: "map", odds: 1e7, emoji: "🗺️", color: "#c97a35",
+    title: "The Treasure Map",
+    greet: "Arr, ye found it, matey!",
+    line: "One map in ten million. X marks the spot… somewhere under the sand.",
+    award: "Treasure Hunter",
+    claim: "Start digging",
+    fx: { mode: "fall", chars: ["🪙", "✦", "⚓"], n: 24, size: [14, 26] } },
   { id: "diamond", odds: 1e6, emoji: "💎", color: "#3fb8e0",
     title: "The Millionth Diamond",
     greet: "Well met, Millionth Wanderer.",
     line: "A million taps of pressure made one perfect diamond, and it formed in your hands.",
     award: "Diamond Hands",
-    claim: "Polish your diamond",
+    claim: "Design your diamond",
     fx: { mode: "fall", chars: ["💠", "✦", "✧"], n: 30, size: [12, 26] } },
   { id: "egg", odds: 1e5, emoji: "🥚", color: "#1fa37a",
     title: "The Dragon Egg",
@@ -2113,11 +2408,11 @@ const RARES = [
     claim: "Warm the egg",
     fx: { mode: "rise", chars: ["✨", "🔮", "✦"], n: 30, size: [12, 28] } },
   { id: "phoenix", odds: 1e4, emoji: "🔥", color: "#f0561f",
-    title: "Phoenix Flame",
-    greet: "Rise, Flame-Bearer!",
-    line: "A phoenix sheds one spark every ten thousand years. It just landed on you.",
-    award: "Flame-Bearer",
-    claim: "Carry the flame",
+    title: "Fingers on Fire",
+    greet: "Whoa, careful! Something's smoking…",
+    line: "You tapped so fast your fingers caught fire. Only 1 in 10,000 taps gets this hot.",
+    award: "Fire Fingers",
+    claim: "Prove it: 10-second frenzy",
     fx: { mode: "rise", chars: ["🔥", "✨", "•"], n: 34, size: [10, 30] } },
   { id: "clover", odds: 1e3, emoji: "🍀", color: "#2f9a3f",
     title: "Four-Leaf Clover",
@@ -2146,7 +2441,13 @@ function load() {
   try { return JSON.parse(localStorage.getItem(STORE)) || { taps: 0, awards: {} }; }
   catch (_) { return { taps: 0, awards: {} }; }
 }
-function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (_) {} }
+/* Saving is batched: fast tapping writes at most a few times a second, and any
+   pending save is flushed when the page is hidden or closed. */
+let saveTimer = null;
+function saveNow() { clearTimeout(saveTimer); saveTimer = null; try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (_) {} }
+function save() { if (!saveTimer) saveTimer = setTimeout(saveNow, 400); }
+addEventListener("pagehide", saveNow);
+document.addEventListener("visibilitychange", () => { if (document.hidden) saveNow(); });
 const state = load();
 state.awards = state.awards || {};
 state.taps = state.taps || 0;
@@ -2167,7 +2468,21 @@ function rand() {
     return (a[0] * 2097152 + (a[1] >>> 11)) / 9007199254740992;
   } catch (_) { return Math.random(); }
 }
-function rollRare() {
+/* Luck multiplies the chance of every rare find EXCEPT The Singularity, which always
+   stays a true 1 in 1,000,000,000. If the boosted chances add up past 100%, a rare find
+   is certain and the tier is picked in proportion to its boosted chance. */
+function rollRare(mult = 1) {
+  if (mult > 1) {
+    const sing = RARES.find(t => t.id === "singularity");
+    if (rand() < 1 / sing.odds) return sing;          // unboosted, always
+    const pool = RARES.filter(t => t.id !== "singularity");
+    const w = pool.map(t => mult / t.odds);
+    const total = w.reduce((a, b) => a + b, 0);
+    const r = rand() * Math.max(1, total);
+    let acc = 0;
+    for (let i = 0; i < pool.length; i++) { acc += w[i]; if (r < acc) return pool[i]; }
+    return null;
+  }
   const r = rand();
   let edge = 0;
   for (const t of RARES) {
@@ -2189,7 +2504,8 @@ function textOn(hex) {
   return (.2126 * r + .7152 * g + .0722 * b) > .3 ? "#1a1726" : "#ffffff";
 }
 function restart(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
-const fmtOdds = n => "1 in " + n.toLocaleString("en-US");
+/* The rarest find keeps its odds a secret everywhere they'd be shown */
+const fmtOdds = n => n >= 1e9 ? "1 in ???" : "1 in " + n.toLocaleString("en-US");
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const nowDate = () => new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
@@ -2198,156 +2514,688 @@ const nowTime = () => new Date().toLocaleTimeString(undefined, { hour: "numeric"
 /* ---- the interactive moment for each rare find ----
    run(stage, done): draws the UI into the stage; done(update, html) saves and shows the result.
    summary(extra): one line for the award library. */
+/* ---------- helpers for the rare-find moments ---------- */
+const fmtDay = d => new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+function hashStr(s) { let h = 2166136261; for (const ch of s) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function seeded(seed) {
+  let a = seed || 1;
+  return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+/* the same name always draws the same constellation */
+function constellation(name) {
+  const r = seeded(hashStr(name.toLowerCase()));
+  const n = 5 + Math.floor(r() * 4), pts = [];
+  for (let i = 0; i < n; i++) pts.push([12 + r() * 76, 10 + r() * 60]);
+  pts.sort((a, b) => a[0] - b[0]);
+  return pts.map(p => p.map(v => Math.round(v * 10) / 10));
+}
+function constellationSVG(pts, big) {
+  const lines = pts.slice(1).map((p, i) => `<line x1="${pts[i][0]}" y1="${pts[i][1]}" x2="${p[0]}" y2="${p[1]}"/>`).join("");
+  const stars = pts.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="${i === pts.length - 1 ? 2.6 : 1.6}"/>`).join("");
+  return `<svg class="constel${big ? " big" : ""}" viewBox="0 0 100 80" aria-hidden="true"><g class="cl" stroke="#ffd36b" stroke-width=".7" stroke-opacity=".75">${lines}</g><g class="cs" fill="#fff6d6">${stars}</g></svg>`;
+}
+
+const GEM_CUTS = {
+  Round:    { d: "M50 6 L80 18 L94 50 L80 82 L50 94 L20 82 L6 50 L20 18 Z", f: "M50 6 L50 94 M6 50 L94 50 M20 18 L80 82 M80 18 L20 82 M35 30 L65 30 L70 50 L65 70 L35 70 L30 50 Z" },
+  Heart:    { d: "M50 90 L12 50 C0 36 8 12 28 12 C40 12 48 22 50 28 C52 22 60 12 72 12 C92 12 100 36 88 50 Z", f: "M50 28 L50 90 M12 50 L50 60 L88 50 M28 12 L50 60 L72 12" },
+  Princess: { d: "M10 10 L90 10 L90 90 L10 90 Z", f: "M10 10 L90 90 M90 10 L10 90 M30 30 L70 30 L70 70 L30 70 Z M50 10 L50 90 M10 50 L90 50" },
+  Pear:     { d: "M50 6 C64 30 86 48 86 66 C86 84 70 94 50 94 C30 94 14 84 14 66 C14 48 36 30 50 6 Z", f: "M50 6 L50 94 M14 66 L86 66 M50 30 L30 66 L50 94 L70 66 Z" },
+  Star:     { d: "M50 4 L61 37 L96 37 L68 58 L79 92 L50 71 L21 92 L32 58 L4 37 L39 37 Z", f: "M50 4 L50 71 M96 37 L32 58 M4 37 L68 58 M79 92 L39 37 M21 92 L61 37" }
+};
+const GEM_COLORS = { White: ["#ffffff", "#bfe9ff"], Pink: ["#ffd1e8", "#ff6fb1"], Blue: ["#d6ecff", "#3f8cff"], Canary: ["#fff6c2", "#f5c518"], Emerald: ["#d9ffe9", "#1fa35c"], Violet: ["#eadcff", "#8b5cf6"] };
+let gemUid = 0;
+function gemSVG(cut, color) {
+  const c = GEM_CUTS[cut] || GEM_CUTS.Round;
+  const [a, b] = GEM_COLORS[color] || GEM_COLORS.White;
+  const id = "gem" + (++gemUid);
+  return `<svg class="gem-svg" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset=".55" stop-color="${b}"/><stop offset="1" stop-color="${a}"/></linearGradient></defs><path d="${c.d}" fill="url(#${id})" stroke="#ffffffcc" stroke-width="1.5" stroke-linejoin="round"/><path d="${c.f}" fill="none" stroke="#ffffff" stroke-opacity=".55" stroke-width=".8"/><path class="glint" d="M30 22 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#fff"/></svg>`;
+}
+
+const DRAGON_Q = [
+  { key: "time",     q: "When was your dragon born?", opts: [["Sunrise", "🌅"], ["Midnight", "🌙"], ["Thunderstorm", "⛈️"]] },
+  { key: "treasure", q: "What does it hoard?",        opts: [["Books", "📚"], ["Cookies", "🍪"], ["Songs", "🎵"]] },
+  { key: "mood",     q: "What's its personality?",    opts: [["Brave", "🛡️"], ["Sleepy", "💤"], ["Mischievous", "😼"]] }
+];
+const DRAGON_COLORS = { Sunrise: ["#ffb38a", "#ffe6d2", "#e8643f"], Midnight: ["#7a6cf0", "#d4ceff", "#3b2f99"], Thunderstorm: ["#4cc3ea", "#d2f4ff", "#1f6f9a"] };
+const DRAGON_NAMES = ["Ember", "Pebble", "Mochi", "Zephyr", "Biscuit", "Nova", "Sprout", "Comet", "Pickle", "Juniper", "Sparky", "Waffles"];
+const TIME_PHRASE = { Sunrise: "at sunrise", Midnight: "at midnight", Thunderstorm: "in a thunderstorm" };
+function dragonBlurb(d) {
+  return `A ${String(d.mood || "").toLowerCase()} dragon born ${TIME_PHRASE[d.time] || ""} who hoards ${String(d.treasure || "").toLowerCase()}.`;
+}
+function dragonSVG(d) {
+  const [body, belly, dark] = DRAGON_COLORS[d.time] || DRAGON_COLORS.Sunrise;
+  let eyes, mouth, prop = "";
+  if (d.mood === "Sleepy") {
+    eyes = `<path d="M47 44 Q52 48 57 44 M63 44 Q68 48 73 44" stroke="#2a1f3d" stroke-width="2.4" fill="none" stroke-linecap="round"/><text x="86" y="24" font-size="11" font-weight="800" font-family="sans-serif" fill="${dark}">z</text><text x="94" y="15" font-size="8" font-weight="800" font-family="sans-serif" fill="${dark}">z</text>`;
+    mouth = `<ellipse cx="60" cy="58" rx="2.5" ry="3" fill="#2a1f3d"/>`;
+  } else if (d.mood === "Mischievous") {
+    eyes = `<ellipse cx="52" cy="43" rx="4" ry="5" fill="#2a1f3d"/><circle cx="53.5" cy="41" r="1.4" fill="#fff"/><path d="M63 44 Q68 40 73 44" stroke="#2a1f3d" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+    mouth = `<path d="M54 57 Q60 62 66 56" stroke="#2a1f3d" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M62.5 58.6 l1.6 3.2 1.4 -3.8" fill="#fff"/>`;
+  } else {
+    eyes = `<ellipse cx="52" cy="43" rx="4" ry="5" fill="#2a1f3d"/><ellipse cx="68" cy="43" rx="4" ry="5" fill="#2a1f3d"/><circle cx="53.5" cy="41" r="1.4" fill="#fff"/><circle cx="69.5" cy="41" r="1.4" fill="#fff"/><path d="M46 35 L56 37.5 M74 35 L64 37.5" stroke="#2a1f3d" stroke-width="2" stroke-linecap="round"/>`;
+    mouth = `<path d="M55 57 Q60 61 65 57" stroke="#2a1f3d" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+  }
+  if (d.treasure === "Books") prop = `<g transform="translate(74 88) rotate(-8)"><rect width="22" height="15" rx="2" fill="#c0392b"/><rect x="2" y="2" width="18" height="11" rx="1" fill="#fff6e3"/><path d="M11 2 V13" stroke="#c0392b" stroke-width="1"/></g>`;
+  else if (d.treasure === "Cookies") prop = `<g transform="translate(84 96)"><circle r="9" fill="#d9a05b"/><circle cx="-3" cy="-2" r="1.6" fill="#5a3a1a"/><circle cx="3" cy="2" r="1.6" fill="#5a3a1a"/><circle cx="2" cy="-4" r="1.2" fill="#5a3a1a"/></g>`;
+  else if (d.treasure === "Songs") prop = `<g fill="${dark}" font-family="sans-serif"><text x="88" y="42" font-size="15">♪</text><text x="97" y="60" font-size="12">♫</text></g>`;
+  return `<svg class="dragon-svg" viewBox="0 0 120 112" aria-hidden="true">
+    <path d="M40 66 Q12 40 16 74 Q26 66 40 76 Z" fill="${dark}"/>
+    <path d="M80 66 Q108 40 104 74 Q94 66 80 76 Z" fill="${dark}"/>
+    <path d="M82 92 Q108 98 106 76 Q102 86 86 86 Z" fill="${body}"/><path d="M104 74 l6 -6 -1 9z" fill="${dark}"/>
+    <ellipse cx="60" cy="84" rx="26" ry="22" fill="${body}"/>
+    <ellipse cx="60" cy="88" rx="15" ry="15" fill="${belly}"/>
+    <ellipse cx="47" cy="104" rx="7" ry="4.5" fill="${dark}"/><ellipse cx="73" cy="104" rx="7" ry="4.5" fill="${dark}"/>
+    <path d="M44 24 L39 7 L53 19 Z M76 24 L81 7 L67 19 Z" fill="${belly}"/>
+    <path d="M54 22 l6 -9 6 9 z" fill="${dark}"/>
+    <circle cx="60" cy="44" r="24" fill="${body}"/>
+    <ellipse cx="60" cy="54" rx="12" ry="8" fill="${belly}"/>
+    <circle cx="56" cy="51" r="1.2" fill="${dark}"/><circle cx="64" cy="51" r="1.2" fill="${dark}"/>
+    <circle cx="44" cy="52" r="4" fill="#ff9fbf" opacity=".5"/><circle cx="76" cy="52" r="4" fill="#ff9fbf" opacity=".5"/>
+    ${eyes}${mouth}${prop}
+  </svg>`;
+}
+
+const FIRE_RANKS = [
+  { under: 30,       name: "Warm Thumbs",       emoji: "🌡️", line: "A gentle simmer. The flame wants more." },
+  { under: 45,       name: "Hot Hands",         emoji: "♨️", line: "Nice heat! The flame is impressed." },
+  { under: 65,       name: "Blazing Fingers",   emoji: "🔥", line: "That's a real fire. Lumi had to step back." },
+  { under: 85,       name: "Inferno Thumbs",    emoji: "🌋", line: "Unstoppable. The fire department is on its way." },
+  { under: Infinity, name: "Supernova Fingers", emoji: "☀️", line: "Your fingers are now technically a small star." }
+];
+/* Ascension blessings: permanent, stackable by finding Ascension again */
+const BLESSINGS = [
+  { id: "fingers", emoji: "👆", name: "Golden Fingers", desc: lvl => `Every tap counts as ${lvl + 2} instead of ${lvl + 1}.` },
+  { id: "luck",    emoji: "🍀", name: "Blessed Luck",   desc: lvl => `Your luck never drops below ${3 + lvl * 2}× (The Singularity can't be boosted).` },
+  { id: "streak",  emoji: "🔥", name: "Unbreakable Streak", max: 1, desc: () => `Your daily streak never resets, even when you miss days.` }
+];
+function givePower(id, n = 1) {
+  state.inv[id] = (state.inv[id] || 0) + n;
+  if (state.seenPowers && !state.seenPowers.includes(id)) state.seenPowers.push(id); if (typeof updateBagBadge === "function") updateBagBadge(); }
+const ALIEN_A = ["Zor", "Bli", "Qua", "Nix", "Xel", "Mo", "Vee", "Gli", "Plu", "Ory", "Zim", "Kru"];
+const ALIEN_B = ["bax", "nk", "zzle", "po", "tron", "li", "mox", "x", "ble", "doo"];
+const ALIEN_PLANETS = ["Kepler-442", "Glorp Prime", "Nebula 9", "Zyx-4", "the Bubble Moon", "Planet Snorf", "Andromeda Station"];
+const TREASURES = [["Captain's Compass", "🧭"], ["Ruby Parrot Statue", "🦜"], ["Golden Anchor", "⚓"], ["Sunken Pearl", "🦪"], ["Moon Coin", "🌙"], ["Mermaid's Comb", "🧜"], ["Jeweled Spyglass", "🔭"], ["Ancient Gold Doubloon", "🪙"]];
+
+const LEAF_INFO = {
+  Hope:  { icon: "🌱", gift: "Something good is on its way to you." },
+  Faith: { icon: "🕊️", gift: "Trust yourself. You're on the right path." },
+  Love:  { icon: "💚", gift: "You are loved more than you know." },
+  Luck:  { icon: "✨", gift: "May every coin you find land heads up." }
+};
+function floatEmber(host) {
+  if (reduced()) return;
+  const s = document.createElement("span");
+  s.className = "ember";
+  s.textContent = rand() < .5 ? "🔥" : "✦";
+  s.style.left = (10 + rand() * 80) + "%";
+  host.appendChild(s);
+  setTimeout(() => s.remove(), 1300);
+}
+/* A 1080x1350 card to send to someone you're giving luck to */
+async function luckCard(to, leaf, msg) {
+  try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
+  const W = 1080, H = 1350;
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const ctx = c.getContext("2d");
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#e4fad6"); g.addColorStop(.6, "#8bd676"); g.addColorStop(1, "#2f8a3c");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#ffffff55";
+  for (let i = 0; i < 60; i++) { ctx.beginPath(); ctx.arc(rand() * W, rand() * H, 2 + rand() * 4, 0, Math.PI * 2); ctx.fill(); }
+  ctx.save(); ctx.shadowColor = "#0003"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
+  roundRect(ctx, 90, 140, 900, 1060, 60); ctx.fillStyle = "#ffffffee"; ctx.fill(); ctx.restore();
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.font = `240px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  ctx.fillText("🍀", 540, 360);
+  ctx.fillStyle = "#1e6b2a"; ctx.font = `800 40px "Nunito", sans-serif`;
+  ctx.fillText("A FOUR-LEAF CLOVER FOR", 540, 560);
+  let size = 110; ctx.font = `${size}px "Pacifico", cursive`;
+  while (ctx.measureText(to).width > 800 && size > 50) { size -= 8; ctx.font = `${size}px "Pacifico", cursive`; }
+  ctx.fillStyle = "#0f3a17"; ctx.fillText(to, 540, 680);
+  ctx.font = `800 38px "Nunito", sans-serif`; ctx.fillStyle = "#2f8a3c";
+  ctx.fillText(`${LEAF_INFO[leaf].icon}  The leaf of ${leaf}`, 540, 800);
+  ctx.font = `700 50px "Nunito", sans-serif`; ctx.fillStyle = "#0f3a17";
+  const lines = wrapLines(ctx, "“" + msg + "”", 760);
+  let y = 900; lines.slice(0, 3).forEach(l => { ctx.fillText(l, 540, y); y += 64; });
+  ctx.font = `700 36px "Nunito", sans-serif`; ctx.fillStyle = "#4f7d55";
+  ctx.fillText(state.name ? "with luck from " + state.name : "found 1 in 1,000 times, just for you", 540, 1120);
+  ctx.font = `800 44px "Bricolage Grotesque", sans-serif`; ctx.fillStyle = "#ffffff";
+  ctx.fillText("Tap for a Sentence", 540, 1280);
+  return await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error("no image")), "image/png"));
+}
+/* Hand an image to the viewer: claude.ai save prompt, phone share sheet, or a download.
+   Resolves "saved" | "shared" | "downloaded" | "declined" | "failed". */
+async function deliverImage(blob, filename, text) {
+  const inViewer = !!(window.claude && window.claude.use);
+  if (inViewer) {
+    const dl = await useCap("downloads");
+    if (dl) {
+      try { await dl.save({ filename, data: blob }); return "saved"; }
+      catch (e) { return e && e.code === "declined" ? "declined" : "failed"; }
+    }
+  }
+  try {
+    const file = new File([blob], filename, { type: "image/png" });
+    if (matchMedia("(pointer: coarse)").matches && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "Tap for a Sentence", text }); return "shared"; }
+      catch (e) { return e && e.name === "AbortError" ? "declined" : "failed"; }
+    }
+  } catch (_) {}
+  try {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    return "downloaded";
+  } catch (_) { return "failed"; }
+}
+
 const STEPS = {
+  /* 1 in 1,000,000,000 — name a star, see its constellation, seal a time capsule */
   singularity: {
     run(stage, done) {
       stage.innerHTML = `
         <label class="slabel" for="starName">Name your star</label>
-        <input class="field" id="starName" maxlength="24" autocomplete="off" placeholder="Your name">
-        <p class="shint" id="starHint">It will shine at the edge of the universe forever.</p>
+        <input class="field" id="starName" maxlength="24" autocomplete="off" placeholder="Your name, or someone you love">
+        <div class="constel-wrap" id="constelPrev"></div>
+        <p class="shint" id="starHint">Every name draws its own constellation.</p>
         <button class="claim" type="button" id="lightStar">Light it up ✦</button>`;
       const input = $("starName");
       input.focus();
+      input.oninput = () => {
+        const n = input.value.trim();
+        $("constelPrev").innerHTML = n ? constellationSVG(constellation(n), true) : "";
+      };
       const go = () => {
         const name = input.value.trim().replace(/\s+/g, " ");
         if (!name) { $("starHint").textContent = "Type a name first, then light it up."; input.focus(); return; }
-        const ra = `${Math.floor(rand() * 24)}h ${String(Math.floor(rand() * 60)).padStart(2, "0")}m`;
-        const dec = `${rand() < .5 ? "−" : "+"}${Math.floor(rand() * 90)}°`;
+        const pts = constellation(name);
+        const r = seeded(hashStr(name + "coords"));
+        const ra = `${Math.floor(r() * 24)}h ${String(Math.floor(r() * 60)).padStart(2, "0")}m`;
+        const dec = `${r() < .5 ? "−" : "+"}${Math.floor(r() * 90)}°`;
         const tag = document.createElement("span");
         tag.className = "named";
         tag.textContent = "✦ " + name;
         $("fx").appendChild(tag);
-        done(x => { x.starName = name; x.coords = `RA ${ra}, Dec ${dec}`; },
-          `<p class="cert-kicker">Keeper of the Cosmos · Star registry</p>
+        playAch();
+        let days = 30;
+        stage.innerHTML = `
+          ${constellationSVG(pts, true)}
+          <p class="cert-kicker">★ ${esc(name)} · RA ${ra}, Dec ${dec}</p>
+          <label class="slabel" for="capsule">Now write to your future self</label>
+          <textarea class="field" id="capsule" rows="4" maxlength="400" placeholder="Dear future me…"></textarea>
+          <p class="slabel">Keep it sealed for</p>
+          <div class="chips" id="sealChips">${[["1 week", 7], ["1 month", 30], ["1 year", 365]].map(([l, d]) => `<button type="button" class="chip${d === 30 ? " on" : ""}" data-days="${d}">${l}</button>`).join("")}</div>
+          <p class="shint" id="capHint">It stays locked in your award library until then.</p>
+          <button class="claim" type="button" id="sealBtn">Seal the time capsule 🔒</button>
+          <button class="skipnext" type="button" id="skipCapsule">Skip the capsule</button>`;
+        $("capsule").focus();
+        $("sealChips").onclick = e => {
+          const b = e.target.closest("[data-days]"); if (!b) return;
+          days = +b.dataset.days;
+          $("sealChips").querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === b));
+        };
+        const base = x => { x.starName = name; x.coords = `RA ${ra}, Dec ${dec}`; x.points = pts; };
+        $("sealBtn").onclick = () => {
+          const text = $("capsule").value.trim();
+          if (text.length < 2) { $("capHint").textContent = "Write a few words to your future self first."; $("capsule").focus(); return; }
+          const opens = new Date(Date.now() + days * 86400000);
+          done(x => { base(x); x.capsules = [{ text, sealed: new Date().toISOString(), opens: opens.toISOString() }, ...(x.capsules || [])].slice(0, 10); },
+            `${constellationSVG(pts, true)}
+             <p class="cert-kicker">Keeper of the Cosmos · Star registry</p>
+             <p class="cert-big">★ ${esc(name)}</p>
+             <p class="cert-small">🔒 Your time capsule is sealed until ${fmtDay(opens)}. The universe will keep it safe.</p>`);
+        };
+        $("skipCapsule").onclick = () => done(base,
+          `${constellationSVG(pts, true)}
+           <p class="cert-kicker">Keeper of the Cosmos · Star registry</p>
            <p class="cert-big">★ ${esc(name)}</p>
            <p class="cert-small">Now shining at RA ${ra}, Dec ${dec}. One of one.</p>`);
       };
       $("lightStar").onclick = go;
       input.onkeydown = e => { if (e.key === "Enter") go(); };
     },
-    summary: x => x.starName ? `Star “${esc(x.starName)}” · ${esc(x.coords)}` : ""
+    summary: x => {
+      let s = "";
+      if (x.points) s += `<span class="mini-art sky">${constellationSVG(x.points)}</span>`;
+      if (x.starName) s += `Star “${esc(x.starName)}” · ${esc(x.coords || "")}`;
+      (x.capsules || []).forEach(c => {
+        s += new Date(c.opens) <= new Date()
+          ? `<br>📬 From you on ${fmtDay(c.sealed)}: “${esc(c.text)}”`
+          : `<br>🔒 Time capsule opens ${fmtDay(c.opens)}`;
+      });
+      return s;
+    }
   },
 
-  diamond: {
+  /* 1 in 500,000,000 — Ascension: choose a permanent blessing */
+  ascend: {
     run(stage, done) {
+      const perks = state.perks || {};
       stage.innerHTML = `
-        <button class="gem" id="gem" type="button" aria-label="Polish the diamond">💎</button>
-        <p class="shint" id="gemHint" aria-live="polite">Tap the diamond to polish it · 0/5</p>`;
-      const gem = $("gem");
-      let n = 0;
-      gem.focus();
-      gem.onclick = () => {
-        n++;
-        gem.style.setProperty("--shine", n / 5);
-        $("gemHint").textContent = n < 5 ? `Keep polishing · ${n}/5` : "Perfect.";
-        if (n < 5) return;
-        gem.onclick = null;
-        const carat = (0.5 + rand() * 9.5).toFixed(2);
-        const clarity = ["Flawless", "Internally Flawless", "VVS1", "VVS2"][Math.floor(rand() * 4)];
-        const colorGrade = ["D", "E", "F"][Math.floor(rand() * 3)];
-        const serial = "No. " + String(Math.floor(rand() * 1e6)).padStart(6, "0");
-        setTimeout(() => done(x => { x.carat = carat; x.clarity = clarity; x.grade = colorGrade; x.serial = serial; },
-          `<p class="cert-kicker">Diamond Hands · Certificate ${serial}</p>
-           <p class="cert-big">${carat} carats</p>
-           <p class="cert-small">Clarity ${clarity} · Color ${colorGrade} · Polished ${nowDate()}</p>`), 450);
-      };
-    },
-    summary: x => x.carat ? `${x.carat} ct · ${x.clarity} · Color ${x.grade} · ${x.serial}` : ""
-  },
-
-  egg: {
-    run(stage, done) {
-      stage.innerHTML = `
-        <button class="egg-btn" id="eggBtn" type="button" aria-label="Warm the dragon egg">🥚</button>
-        <p class="shint" id="eggHint" aria-live="polite">Tap the egg to keep it warm · 0/7</p>`;
-      const egg = $("eggBtn");
-      let n = 0;
-      egg.focus();
-      egg.onclick = () => {
-        n++;
-        egg.style.setProperty("--warm", n / 7);
-        restart(egg, "shake");
-        $("eggHint").textContent = n < 4 ? `It's getting warmer · ${n}/7` : n < 7 ? `Something is moving inside! · ${n}/7` : "It's hatching!";
-        if (n < 7) return;
-        egg.onclick = null;
-        const names = ["Ember", "Pebble", "Mochi", "Zephyr", "Biscuit", "Nova", "Sprout", "Comet", "Pickle", "Juniper", "Sparky", "Waffles"];
-        const elements = [["Ember", "🔥"], ["Frost", "❄️"], ["Bloom", "🌸"], ["Storm", "⚡"], ["Star", "⭐"], ["Tide", "🌊"]];
-        const name = names[Math.floor(rand() * names.length)];
-        const [element, icon] = elements[Math.floor(rand() * elements.length)];
-        setTimeout(() => { egg.textContent = "🐉"; restart(egg, "shake"); }, 350);
-        setTimeout(() => done(x => { x.dragon = name; x.element = element; x.hatched = new Date().toISOString(); },
-          `<p class="cert-kicker">Dragon Keeper · Hatchling papers</p>
-           <p class="cert-big">🐉 ${name}</p>
-           <p class="cert-small">${icon} ${element} dragon · Hatched ${nowDate()} at ${nowTime()}</p>`), 1100);
-      };
-    },
-    summary: x => x.dragon ? `${esc(x.dragon)}, a ${esc(String(x.element).toLowerCase())} dragon` : ""
-  },
-
-  phoenix: {
-    run(stage, done) {
-      stage.innerHTML = `
-        <button class="hold" id="hold" type="button"><span class="fill" id="fill"></span><span class="hl" id="holdLabel">Hold to ignite</span></button>
-        <p class="shint" id="holdHint">Press and hold until the flame catches.</p>`;
-      const btn = $("hold"), fill = $("fill");
-      let p = 0, timer = null, lit = false;
-      const start = () => {
-        if (timer || lit) return;
-        $("holdLabel").textContent = "Keep holding…";
-        timer = setInterval(() => {
-          p += 4;
-          fill.style.width = Math.min(p, 100) + "%";
-          if (p >= 100) finish();
-        }, 100);
-      };
-      const stop = () => {
-        if (lit) return;
-        clearInterval(timer); timer = null;
-        if (p > 0) $("holdHint").textContent = "The spark faded. Hold a little longer.";
-        p = 0; fill.style.width = "0%";
-        $("holdLabel").textContent = "Hold to ignite";
-      };
-      const finish = () => {
-        lit = true; clearInterval(timer); timer = null;
-        done(x => { x.lit = x.lit || new Date().toISOString(); x.rekindled = (x.rekindled || 0) + 1; },
-          `<p class="cert-kicker">Flame-Bearer · Phoenix Flame</p>
-           <p class="cert-big">🔥 Your flame is lit</p>
-           <p class="cert-small">Lit ${nowDate()} at ${nowTime()}. It will burn for 10,000 years.</p>`);
-      };
-      btn.focus();
-      btn.addEventListener("pointerdown", e => { e.preventDefault(); start(); });
-      ["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, stop));
-      btn.addEventListener("contextmenu", e => e.preventDefault());
-      btn.addEventListener("keydown", e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); start(); } });
-      btn.addEventListener("keyup", e => { if (e.key === " " || e.key === "Enter") stop(); });
-    },
-    summary: x => x.lit ? `Flame lit ${new Date(x.lit).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}${x.rekindled > 1 ? ` · rekindled ×${x.rekindled}` : ""}` : ""
-  },
-
-  clover: {
-    run(stage, done) {
-      const leaves = [
-        ["Hope", "🌱", "Something you're waiting for is closer than you think."],
-        ["Faith", "🕊️", "Trust your next step. It's the right one."],
-        ["Love", "💚", "Someone is thinking of you kindly today."],
-        ["Luck", "✨", "Say yes to the next small adventure."]
-      ];
-      const colorsLucky = [["Mint", "#3ccf91"], ["Sunflower", "#f5c518"], ["Coral", "#ff6b6b"], ["Sky", "#4fb3ff"], ["Lilac", "#b48bff"], ["Peach", "#ffb38a"], ["Emerald", "#1fa35c"]];
-      stage.innerHTML = `
-        <p class="slabel">Each leaf holds a different fortune</p>
-        <div class="leaves">${leaves.map((l, i) => `<button class="leaf" type="button" data-i="${i}"><span aria-hidden="true">${l[1]}</span>${l[0]}</button>`).join("")}</div>`;
-      stage.querySelector(".leaf").focus();
-      stage.querySelectorAll(".leaf").forEach(b => b.onclick = () => {
-        const [leaf, icon, fortune] = leaves[+b.dataset.i];
-        const num = 1 + Math.floor(rand() * 99);
-        const [cname, chex] = colorsLucky[Math.floor(rand() * colorsLucky.length)];
-        done(x => { x.leaf = leaf; x.number = num; x.color = cname; },
-          `<p class="cert-kicker">Lucky Charm · Leaf of ${leaf} ${icon}</p>
-           <p class="cert-big">${fortune}</p>
-           <p class="cert-small">Lucky number ${num} · Lucky color <span class="swatch" style="background:${chex}"></span> ${cname}</p>`);
+        <p class="qline">Choose one blessing. It lasts forever.</p>
+        <div class="perk-grid">${BLESSINGS.filter(b => !b.max || (perks[b.id] || 0) < b.max).map(b => `
+          <button type="button" class="perk" data-perk="${b.id}">
+            <span class="perk-emoji" aria-hidden="true">${b.emoji}</span>
+            <span class="perk-name">${b.name}${perks[b.id] ? ` <small>Lv ${perks[b.id]} → ${perks[b.id] + 1}</small>` : ""}</span>
+            <span class="perk-desc">${b.desc(perks[b.id] || 0)}</span>
+          </button>`).join("")}</div>`;
+      stage.querySelector(".perk").focus();
+      stage.querySelectorAll(".perk").forEach(btn => btn.onclick = () => {
+        const b = BLESSINGS.find(x => x.id === btn.dataset.perk);
+        const lvl = (perks[b.id] || 0) + 1;
+        playRare("ascend");
+        done(x => {
+          state.perks = state.perks || {};
+          state.perks[b.id] = (state.perks[b.id] || 0) + 1;
+          x.blessings = [{ id: b.id, at: new Date().toISOString() }, ...(x.blessings || [])];
+          renderBoosts();
+        },
+          `<p class="fire-rank-emoji" aria-hidden="true">${b.emoji}</p>
+           <p class="cert-kicker">The Ascended · Blessing received</p>
+           <p class="cert-big">${b.name}${lvl > 1 ? ` · Level ${lvl}` : ""}</p>
+           <p class="cert-small">${b.desc(lvl - 1)} Forever.</p>`);
       });
     },
-    summary: x => x.leaf ? `Leaf of ${x.leaf} · lucky number ${x.number} · ${x.color}` : ""
+    summary: x => {
+      const p = state.perks || {};
+      const list = BLESSINGS.filter(b => p[b.id]).map(b => `${b.emoji} ${b.name}${p[b.id] > 1 ? " Lv " + p[b.id] : ""}`);
+      return list.length ? `Blessings: ${list.join(", ")}` : "";
+    }
+  },
+
+  /* 1 in 250,000,000 — The Lost Vault: crack a 3-digit code in 6 tries */
+  vault: {
+    run(stage, done) {
+      const digits = [1, 2, 3, 4, 5, 6];
+      const code = [];
+      while (code.length < 3) { const d = digits[Math.floor(rand() * 6)]; if (!code.includes(d)) code.push(d); }
+      const tries = [];
+      let guess = [];
+      const MAX = 6;
+      const draw = (msg) => {
+        stage.innerHTML = `
+          <p class="qline">Three different digits, 1 to 6</p>
+          <p class="shint">🟢 right digit, right spot · 🟡 right digit, wrong spot · ⚫ not in the code</p>
+          <div class="vault-rows">${Array.from({ length: MAX }, (_, i) => {
+            const t = tries[i];
+            if (t) return `<div class="vrow">${t.g.map((d, j) => `<span class="vcell ${t.r[j]}">${d}</span>`).join("")}</div>`;
+            if (i === tries.length) return `<div class="vrow now">${[0, 1, 2].map(j => `<span class="vcell">${guess[j] || ""}</span>`).join("")}</div>`;
+            return `<div class="vrow">${[0, 1, 2].map(() => `<span class="vcell empty"></span>`).join("")}</div>`;
+          }).join("")}</div>
+          <p class="shint" id="vaultMsg">${msg || `${MAX - tries.length} tries left`}</p>
+          <div class="keypad">${digits.map(d => `<button type="button" class="key" data-d="${d}" ${guess.includes(d) ? "disabled" : ""}>${d}</button>`).join("")}
+            <button type="button" class="key wide" data-act="del">⌫</button>
+            <button type="button" class="key wide go" data-act="go" ${guess.length < 3 ? "disabled" : ""}>Try</button></div>`;
+      };
+      const finish = cracked => {
+        const pool = cracked ? ["fate", "surge"] : ["midas", "clone"];
+        const reward = powerById(pool[Math.floor(rand() * pool.length)]);
+        playRare(cracked ? "vault" : "clover");
+        done(x => {
+          givePower(reward.id);
+          x.opened = (x.opened || 0) + 1;
+          if (cracked) { x.cracked = (x.cracked || 0) + 1; x.bestTries = Math.min(x.bestTries || 99, tries.length); }
+        },
+          `<p class="fire-rank-emoji" aria-hidden="true">${cracked ? "💰" : "🔧"}</p>
+           <p class="cert-kicker">Vault Breaker · Code ${code.join("")}</p>
+           <p class="cert-big">${cracked ? `Cracked in ${tries.length} ${tries.length === 1 ? "try" : "tries"}!` : "The lock jammed…"}</p>
+           <p class="cert-small">${cracked ? "Inside, glowing on a velvet pillow:" : "…but you pried out a side drawer:"} ${reward.emoji} <b>${reward.name}</b> (${RARITY[reward.rarity].name}) is in your bag.</p>`);
+      };
+      stage.onclick = e => {
+        const k = e.target.closest(".key");
+        if (!k || k.disabled) return;
+        if (k.dataset.d) { if (guess.length < 3) guess.push(+k.dataset.d); if (audio()) tone(440 + guess.length * 110, 0, .06, { type: "square", vol: .04 }); draw(); return; }
+        if (k.dataset.act === "del") { guess.pop(); draw(); return; }
+        if (k.dataset.act === "go" && guess.length === 3) {
+          const r = guess.map((d, i) => d === code[i] ? "g" : code.includes(d) ? "y" : "x");
+          tries.push({ g: guess, r });
+          guess = [];
+          if (r.every(c => c === "g")) { draw("Click… click… CLUNK."); stage.onclick = null; setTimeout(() => finish(true), 700); }
+          else if (tries.length >= MAX) { draw("Out of tries."); stage.onclick = null; setTimeout(() => finish(false), 700); }
+          else draw();
+        }
+      };
+      draw();
+      stage.querySelector(".key").focus();
+    },
+    summary: x => x.opened ? `Vaults opened: ${x.opened}${x.cracked ? ` · cracked ${x.cracked} (best: ${x.bestTries} tries)` : ""}` : ""
+  },
+
+  /* 1 in 100,000,000 — First Contact: repeat the alien signal (memory game) */
+  alien: {
+    run(stage, done) {
+      const PADS = [["#3df2a0", 392], ["#a46bff", 494], ["#4db8ff", 587], ["#ffd84d", 698]];
+      const ROUNDS = [3, 4, 5, 6];
+      let round = 0, seq = [], input = [], lives = 2, busy = true;
+      stage.innerHTML = `
+        <p class="qline" id="simonTitle">Watch the signal…</p>
+        <div class="simon">${PADS.map((p, i) => `<button type="button" class="pad" data-i="${i}" style="--pc:${p[0]}" aria-label="Signal light ${i + 1}"></button>`).join("")}</div>
+        <p class="shint" id="simonMsg">Round 1 of ${ROUNDS.length} · ${"💚".repeat(lives)}</p>`;
+      const pads = [...stage.querySelectorAll(".pad")];
+      const flash = i => {
+        pads[i].classList.add("lit");
+        if (audio()) tone(PADS[i][1], 0, .32, { type: "sine", vol: .14 });
+        setTimeout(() => pads[i].classList.remove("lit"), 300);
+      };
+      const play = () => {
+        busy = true; input = [];
+        seq = Array.from({ length: ROUNDS[round] }, () => Math.floor(rand() * 4));
+        $("simonTitle").textContent = "Watch the signal…";
+        seq.forEach((p, k) => setTimeout(() => flash(p), 700 + k * 520));
+        setTimeout(() => { busy = false; $("simonTitle").textContent = "Your turn: repeat it"; }, 700 + seq.length * 520);
+      };
+      const finish = ok => {
+        busy = true;
+        const name = ALIEN_A[Math.floor(rand() * ALIEN_A.length)] + ALIEN_B[Math.floor(rand() * ALIEN_B.length)];
+        const planet = ALIEN_PLANETS[Math.floor(rand() * ALIEN_PLANETS.length)];
+        const cosmic = POWERS.filter(p => p.group === "cosmic" && p.rarity !== "mythic");
+        const reward = ok ? cosmic[Math.floor(rand() * cosmic.length)] : powerById(["overdrive", "warp"][Math.floor(rand() * 2)]);
+        playRare(ok ? "alien" : "clover");
+        done(x => {
+          givePower(reward.id);
+          x.contacts = [{ name, planet, rounds: round, at: new Date().toISOString() }, ...(x.contacts || [])].slice(0, 20);
+        },
+          `<p class="fire-rank-emoji" aria-hidden="true">👽</p>
+           <p class="cert-kicker">Galactic Ambassador · ${ok ? "Signal decoded" : `${round} of ${ROUNDS.length} rounds`}</p>
+           <p class="cert-big">${name} of ${planet}</p>
+           <p class="cert-small">${ok ? "is your pen pal now. As a welcome gift they beamed down" : "liked you anyway and left you"} ${reward.emoji} <b>${reward.name}</b> (${RARITY[reward.rarity].name}). It's in your bag.</p>`);
+      };
+      stage.onclick = e => {
+        const pad = e.target.closest(".pad");
+        if (!pad || busy) return;
+        const i = +pad.dataset.i;
+        flash(i);
+        if (i !== seq[input.length]) {
+          lives--;
+          if (lives <= 0) { $("simonMsg").textContent = "Signal lost…"; setTimeout(() => finish(false), 600); return; }
+          $("simonMsg").textContent = `Wrong light! Watch again · Round ${round + 1} of ${ROUNDS.length} · ${"💚".repeat(lives)}`;
+          setTimeout(play, 600);
+          return;
+        }
+        input.push(i);
+        if (input.length === seq.length) {
+          round++;
+          if (round >= ROUNDS.length) { $("simonMsg").textContent = "Signal complete!"; setTimeout(() => finish(true), 600); return; }
+          $("simonMsg").textContent = `Nice! Round ${round + 1} of ${ROUNDS.length} · ${"💚".repeat(lives)}`;
+          setTimeout(play, 700);
+        }
+      };
+      play();
+    },
+    summary: x => x.contacts && x.contacts.length ? `Pen pals: ${x.contacts.map(c => `${esc(c.name)} of ${esc(c.planet)}`).join(", ")}` : ""
+  },
+
+  /* 1 in 10,000,000 — The Treasure Map: dig with hot/cold hints */
+  map: {
+    run(stage, done) {
+      const N = 5, DIGS = 4;
+      const target = Math.floor(rand() * N * N);
+      const dug = {};
+      let left = DIGS;
+      stage.innerHTML = `
+        <p class="qline">Where's the treasure? You have ${DIGS} digs.</p>
+        <div class="sand" style="grid-template-columns: repeat(${N}, 1fr)">${Array.from({ length: N * N }, (_, i) => `<button type="button" class="tile" data-i="${i}" aria-label="Dig square ${i + 1}"></button>`).join("")}</div>
+        <p class="shint" id="mapMsg">🔥 hot = right next to it · ♨️ warm = 2 away · 🧊 cold = far</p>`;
+      stage.querySelector(".tile").focus();
+      const finish = found => {
+        const keep = found ? TREASURES[Math.floor(rand() * TREASURES.length)] : ["Pretty Seashell", "🐚"];
+        const legendary = POWERS.filter(p => p.rarity === "legendary" && p.group !== "cosmic");
+        const reward = found ? legendary[Math.floor(rand() * legendary.length)] : powerById(["lens", "magnet"][Math.floor(rand() * 2)]);
+        playRare(found ? "map" : "star");
+        done(x => {
+          givePower(reward.id);
+          x.treasures = [{ name: keep[0], icon: keep[1], at: new Date().toISOString() }, ...(x.treasures || [])].slice(0, 30);
+          x.hunts = (x.hunts || 0) + 1;
+          if (found) x.found = (x.found || 0) + 1;
+        },
+          `<p class="fire-rank-emoji" aria-hidden="true">${found ? "💰" : keep[1]}</p>
+           <p class="cert-kicker">Treasure Hunter · ${found ? `Found with ${DIGS - left} dig${DIGS - left > 1 ? "s" : ""}` : "The tide came in"}</p>
+           <p class="cert-big">${keep[1]} ${keep[0]}</p>
+           <p class="cert-small">${found ? "Tucked inside the chest:" : "You still found something:"} ${reward.emoji} <b>${reward.name}</b> (${RARITY[reward.rarity].name}). It's in your bag.</p>`);
+      };
+      stage.querySelectorAll(".tile").forEach(t => t.onclick = () => {
+        const i = +t.dataset.i;
+        if (dug[i] || left <= 0) return;
+        dug[i] = true; left--;
+        restart(t, "shake");
+        if (i === target) {
+          t.textContent = "💰"; t.classList.add("hit");
+          left = Math.max(left, 0);
+          $("mapMsg").textContent = "X marks the spot!";
+          stage.querySelectorAll(".tile").forEach(x => x.disabled = true);
+          setTimeout(() => finish(true), 800);
+          return;
+        }
+        const d = Math.abs(i % N - target % N) + Math.abs(Math.floor(i / N) - Math.floor(target / N));
+        t.textContent = d === 1 ? "🔥" : d === 2 ? "♨️" : "🧊";
+        t.classList.add("dug");
+        if (left <= 0) {
+          const tt = stage.querySelector(`.tile[data-i="${target}"]`);
+          tt.textContent = "❌"; tt.classList.add("miss");
+          $("mapMsg").textContent = "Out of digs. The X was over there!";
+          stage.querySelectorAll(".tile").forEach(x => x.disabled = true);
+          setTimeout(() => finish(false), 1100);
+        } else $("mapMsg").textContent = `${left} dig${left > 1 ? "s" : ""} left · ${d === 1 ? "So close!" : d === 2 ? "Getting warmer…" : "Brr, cold."}`;
+      });
+    },
+    summary: x => x.treasures && x.treasures.length ? `Treasure chest: ${x.treasures.map(t => `${t.icon} ${esc(t.name)}`).join(", ")}` : ""
+  },
+
+  /* 1 in 1,000,000 — design and engrave your own gem */
+  diamond: {
+    run(stage, done) {
+      let cut = "Round", color = "White";
+      stage.innerHTML = `
+        <div class="gem-preview" id="gemPrev"></div>
+        <p class="slabel">Choose a cut</p>
+        <div class="chips" id="cutChips">${Object.keys(GEM_CUTS).map(k => `<button type="button" class="chip${k === cut ? " on" : ""}" data-cut="${k}">${k}</button>`).join("")}</div>
+        <p class="slabel">Choose a color</p>
+        <div class="chips" id="colorChips">${Object.entries(GEM_COLORS).map(([k, v]) => `<button type="button" class="chip sw${k === color ? " on" : ""}" data-color="${k}"><span style="background:linear-gradient(135deg, ${v[0]}, ${v[1]})"></span>${k}</button>`).join("")}</div>
+        <label class="slabel" for="engrave">Engrave a dedication (optional)</label>
+        <input class="field" id="engrave" maxlength="28" placeholder="For Mom, always">
+        <button class="claim" type="button" id="cutGem">Cut my diamond 💎</button>`;
+      const draw = () => { $("gemPrev").innerHTML = gemSVG(cut, color, "prev"); };
+      draw();
+      $("cutChips").onclick = e => {
+        const b = e.target.closest("[data-cut]"); if (!b) return;
+        cut = b.dataset.cut;
+        $("cutChips").querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === b));
+        draw();
+      };
+      $("colorChips").onclick = e => {
+        const b = e.target.closest("[data-color]"); if (!b) return;
+        color = b.dataset.color;
+        $("colorChips").querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === b));
+        draw();
+      };
+      $("cutChips").querySelector(".chip").focus();
+      $("cutGem").onclick = () => {
+        const engraving = $("engrave").value.trim().replace(/\s+/g, " ");
+        const carat = (0.5 + rand() * 9.5).toFixed(2);
+        const clarity = ["Flawless", "Internally Flawless", "VVS1", "VVS2"][Math.floor(rand() * 4)];
+        const serial = "No. " + String(Math.floor(rand() * 1e6)).padStart(6, "0");
+        playAch();
+        done(x => { Object.assign(x, { cut, color, engraving, carat, clarity, serial }); },
+          `<div class="gem-final">${gemSVG(cut, color, "final")}</div>
+           <p class="cert-kicker">Diamond Hands · Certificate ${serial}</p>
+           <p class="cert-big">${carat} ct ${color} ${cut}</p>
+           ${engraving ? `<p class="cert-engrave">“${esc(engraving)}”</p>` : ""}
+           <p class="cert-small">Clarity ${clarity} · Cut by you on ${nowDate()}</p>`);
+      };
+    },
+    summary: x => x.cut
+      ? `<span class="mini-art">${gemSVG(x.cut, x.color, "lib")}</span>${x.carat} ct ${esc(x.color)} ${esc(x.cut)}${x.engraving ? ` · “${esc(x.engraving)}”` : ""}`
+      : (x.carat ? `${x.carat} ct · ${x.clarity}` : "")
+  },
+
+  /* 1 in 100,000 — shape your dragon with three questions, name it, hatch it */
+  egg: {
+    run(stage, done) {
+      const ans = {};
+      let qi = 0;
+      const ask = () => {
+        if (qi >= DRAGON_Q.length) { nameIt(); return; }
+        const q = DRAGON_Q[qi];
+        stage.innerHTML = `
+          <div class="egg-mini" aria-hidden="true">🥚</div>
+          <p class="slabel">Question ${qi + 1} of ${DRAGON_Q.length}</p>
+          <p class="qline">${q.q}</p>
+          <div class="chips big">${q.opts.map(([l, i]) => `<button type="button" class="chip" data-v="${l}"><span aria-hidden="true">${i}</span> ${l}</button>`).join("")}</div>`;
+        stage.querySelector(".chip").focus();
+        stage.querySelectorAll(".chip").forEach(b => b.onclick = () => { ans[q.key] = b.dataset.v; qi++; ask(); });
+      };
+      const nameIt = () => {
+        const suggestion = DRAGON_NAMES[Math.floor(rand() * DRAGON_NAMES.length)];
+        stage.innerHTML = `
+          <div class="egg-btn shake" id="eggBig" aria-hidden="true">🥚</div>
+          <label class="slabel" for="dragonName">It's about to hatch! Name your dragon</label>
+          <input class="field" id="dragonName" maxlength="16" autocomplete="off" placeholder="${suggestion}">
+          <button class="claim" type="button" id="hatchBtn">Hatch! 🐉</button>`;
+        $("dragonName").focus();
+        const hatch = () => {
+          const name = $("dragonName").value.trim().replace(/\s+/g, " ") || suggestion;
+          $("hatchBtn").disabled = true;
+          const egg = $("eggBig");
+          let k = 0;
+          const wob = setInterval(() => { restart(egg, "shake"); if (++k >= 3) { clearInterval(wob); finish(name); } }, 380);
+        };
+        $("hatchBtn").onclick = hatch;
+        $("dragonName").onkeydown = e => { if (e.key === "Enter") hatch(); };
+      };
+      const finish = name => {
+        playRare("egg");
+        done(x => { Object.assign(x, { dragon: name, time: ans.time, treasure: ans.treasure, mood: ans.mood, hatched: new Date().toISOString() }); },
+          `<div class="dragon-art">${dragonSVG(ans)}</div>
+           <p class="cert-kicker">Dragon Keeper · Hatchling papers</p>
+           <p class="cert-big">${esc(name)}</p>
+           <p class="cert-small">${dragonBlurb(ans)} Hatched ${nowDate()}.</p>`);
+      };
+      ask();
+    },
+    summary: x => x.time
+      ? `<span class="mini-art">${dragonSVG(x)}</span>${esc(x.dragon)}: ${dragonBlurb(x)}`
+      : (x.dragon ? `${esc(x.dragon)}, a ${esc(String(x.element || "").toLowerCase())} dragon` : "")
+  },
+
+  /* 1 in 10,000 — Fingers on Fire: a 10-second tap frenzy with a saved personal best */
+  phoenix: {
+    run(stage, done) {
+      const prevBest = (state.awards.phoenix && state.awards.phoenix.extra && state.awards.phoenix.extra.best) || 0;
+      stage.innerHTML = `
+        <p class="qline" id="fireTitle">Tap the flame as fast as you can</p>
+        <p class="shint" id="fireSub">10 seconds. The clock starts on your first tap.${prevBest ? ` Your best: ${prevBest}.` : ""}</p>
+        <button class="fire-btn" id="fireBtn" type="button" aria-label="Tap the flame">🔥</button>
+        <div class="fire-stats" aria-live="polite"><span id="fireCount">0</span><small>taps</small><span id="fireTime">10.0</span><small>seconds</small></div>
+        <div class="fire-meter"><span id="fireMeter"></span></div>`;
+      const btn = $("fireBtn");
+      let count = 0, startAt = 0, timer = null, over = false;
+      const readyAt = performance.now() + 450;   // ignore the tap that opened this screen
+      btn.focus();
+      const grow = () => {
+        btn.style.setProperty("--heat", Math.min(count, 90) / 90);
+        $("fireCount").textContent = count;
+        $("fireMeter").style.width = Math.min(100, count / 90 * 100) + "%";
+      };
+      const hit = () => {
+        if (over || performance.now() < readyAt) return;
+        if (!startAt) {
+          startAt = performance.now();
+          $("fireTitle").textContent = "GO GO GO!";
+          timer = setInterval(() => {
+            const left = Math.max(0, 10 - (performance.now() - startAt) / 1000);
+            $("fireTime").textContent = left.toFixed(1);
+            if (left <= 0) end();
+          }, 50);
+        }
+        count++;
+        grow();
+        restart(btn, "fire-hit");
+        if (audio()) tone(300 + Math.min(count, 90) * 9, 0, .06, { type: "triangle", vol: .07 });
+        if (count % 6 === 0) floatEmber(btn.parentElement);
+      };
+      const end = () => {
+        over = true;
+        clearInterval(timer);
+        btn.disabled = true;
+        const rank = FIRE_RANKS.find(r => count < r.under) || FIRE_RANKS[FIRE_RANKS.length - 1];
+        const best = Math.max(prevBest, count);
+        const isBest = count > prevBest;
+        playRare("phoenix");
+        setTimeout(() => done(x => {
+          x.best = Math.max(x.best || 0, count);
+          x.bestRank = (FIRE_RANKS.find(r => x.best < r.under) || FIRE_RANKS[FIRE_RANKS.length - 1]).name;
+          x.frenzies = (x.frenzies || 0) + 1;
+          x.last = count;
+        },
+          `<p class="fire-rank-emoji" aria-hidden="true">${rank.emoji}</p>
+           <p class="cert-kicker">Fire Fingers · ${(count / 10).toFixed(1)} taps per second</p>
+           <p class="cert-big">${rank.name}</p>
+           <p class="cert-small">${count} taps in 10 seconds${isBest && prevBest ? " · 🎉 New personal best!" : prevBest ? ` · Best: ${best}` : " · Your first record"}</p>
+           <p class="cert-small">${rank.line}</p>`), 500);
+      };
+      btn.addEventListener("pointerdown", e => { e.preventDefault(); hit(); });
+      btn.addEventListener("keydown", e => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); hit(); } });
+      btn.addEventListener("click", e => e.preventDefault());
+      btn.addEventListener("contextmenu", e => e.preventDefault());
+    },
+    summary: x => x.best
+      ? `Best frenzy: ${x.best} taps in 10 s (${esc(x.bestRank || "")}) · ${x.frenzies || 1} ${(x.frenzies || 1) === 1 ? "frenzy" : "frenzies"}`
+      : (x.words && x.words.length ? `Reborn in: ${x.words.map(o => esc(o.w)).join(", ")}` : (x.lit ? `Flame lit ${fmtDay(x.lit)}` : ""))
+  },
+
+  /* 1 in 1,000 — give the luck to someone and make them a card */
+  clover: {
+    run(stage, done) {
+      stage.innerHTML = `
+        <p class="slabel">Luck is better shared. Pick a leaf to give away</p>
+        <div class="leaves">${Object.keys(LEAF_INFO).map(l => `<button class="leaf" type="button" data-leaf="${l}"><span aria-hidden="true">${LEAF_INFO[l].icon}</span>${l}</button>`).join("")}</div>`;
+      stage.querySelector(".leaf").focus();
+      stage.querySelectorAll(".leaf").forEach(b => b.onclick = () => giftStep(b.dataset.leaf));
+      const giftStep = leaf => {
+        const info = LEAF_INFO[leaf];
+        stage.innerHTML = `
+          <p class="qline">The leaf of ${leaf} ${info.icon}</p>
+          <label class="slabel" for="luckTo">Who deserves this luck?</label>
+          <input class="field" id="luckTo" maxlength="24" autocomplete="off" placeholder="Their name">
+          <label class="slabel" for="luckMsg">A note for them (optional)</label>
+          <input class="field" id="luckMsg" maxlength="70" placeholder="${info.gift}">
+          <p class="shint" id="luckHint"></p>
+          <button class="claim" type="button" id="makeLuck">Make their luck card 🍀</button>`;
+        $("luckTo").focus();
+        $("makeLuck").onclick = () => {
+          const to = $("luckTo").value.trim().replace(/\s+/g, " ");
+          if (!to) { $("luckHint").textContent = "Write their name first."; $("luckTo").focus(); return; }
+          const msg = $("luckMsg").value.trim().replace(/\s+/g, " ") || info.gift;
+          const num = 1 + Math.floor(rand() * 99);
+          const lucky = [["Mint", "#3ccf91"], ["Sunflower", "#f5c518"], ["Coral", "#ff6b6b"], ["Sky", "#4fb3ff"], ["Lilac", "#b48bff"], ["Peach", "#ffb38a"]][Math.floor(rand() * 6)];
+          done(x => {
+            x.given = [{ to, leaf, msg, at: new Date().toISOString() }, ...(x.given || [])].slice(0, 30);
+            x.number = num; x.color = lucky[0];
+          },
+            `<p class="cert-kicker">Lucky Charm · Luck given</p>
+             <p class="cert-big">A four-leaf clover for ${esc(to)}</p>
+             <p class="cert-small">${info.icon} Leaf of ${leaf} · “${esc(msg)}”</p>
+             <p class="cert-small">You keep: lucky number ${num} · <span class="swatch" style="background:${lucky[1]}"></span> ${lucky[0]}</p>
+             <button class="ghost-o" type="button" id="sendLuck">Send ${esc(to)} the card</button>`);
+          const send = $("sendLuck");
+          if (send) send.onclick = async () => {
+            const label = send.textContent;
+            send.textContent = "Making the card…"; send.disabled = true;
+            try {
+              const blob = await luckCard(to, leaf, msg);
+              const r = await deliverImage(blob, "luck-for-" + to.replace(/[^a-z0-9]+/gi, "-").toLowerCase() + ".png", `A four-leaf clover for ${to} 🍀`);
+              send.textContent = r === "declined" ? label : r === "failed" ? "Couldn't make the card" : "Card ready!";
+            } catch (_) { send.textContent = "Couldn't make the card"; }
+            send.disabled = false;
+          };
+        };
+      };
+    },
+    summary: x => x.given && x.given.length
+      ? `Luck given to: ${x.given.map(g => `${esc(g.to)} (${esc(g.leaf)})`).join(", ")}`
+      : (x.leaf ? `Leaf of ${esc(x.leaf)} · lucky number ${x.number} · ${esc(x.color)}` : "")
   },
 
   star: {
@@ -2378,8 +3226,13 @@ const STEPS = {
   }
 };
 
+let lastBurst = 0;
 function burst(emoji) {
   if (reduced()) return;
+  // during fast or auto tapping, confetti only every so often so it can't pile up
+  const now = Date.now();
+  if (now - lastBurst < (typeof haul !== "undefined" && haul ? 400 : 120)) return;
+  lastBurst = now;
   const r = $("tap").getBoundingClientRect();
   const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
   for (let i = 0; i < 10; i++) {
@@ -2415,8 +3268,10 @@ function show(emoji, sentence, eyebrow, rare) {
   $("copy").textContent = "Copy";
 }
 
-function next() {
-  state.taps++;
+function next(auto) {
+  const manual = auto !== true;   // auto-taps never count toward power rolls
+  const tapsBefore = state.taps;
+  state.taps += currentTapMult();
   $("count").textContent = state.taps === 1 ? "1 tap" : state.taps.toLocaleString("en-US") + " taps";
   if (state.taps % 5 === 0) $("tap").textContent = pick(buttonLabels, "l");
 
@@ -2424,7 +3279,7 @@ function next() {
   idleNagged = false;
   if (state.streak.last !== dayKey()) { updateStreak(); checkStreakAch(false); }
 
-  const rare = rollRare();
+  const rare = nextRare();
   if (rare) {
     const label = "✦ Rare find · " + fmtOdds(rare.odds) + " ✦";
     setMood(rare.color);
@@ -2434,6 +3289,10 @@ function next() {
     result = { emoji: rare.emoji, sentence: rare.line, label, rare, color: rare.color };
     const wasBored = state.dry >= BORED_AFTER;
     state.dry = 0;
+    if (owned && rare.odds < 1000 && hauling()) {
+      // Haul Mode: only brand-new finds and finds of 1 in 1,000 or rarer pop up; the rest go into the sack
+      addHaul("rares", rare.id, rare.emoji, rare.title);
+    } else {
     playRare(rare.id);
     vibrateFor(rare.id);
     if (owned && state.skipRepeats) {
@@ -2442,6 +3301,7 @@ function next() {
     } else {
       pendingWitch = () => witchOnRare(rare, wasBored);
       celebrate(rare);
+    }
     }
   } else {
     const color = pick(colors, "c");
@@ -2456,6 +3316,7 @@ function next() {
     playPop();
     witchOnSentence(drawn.tag);
   }
+  afterTap(manual);
   hintTick();
   checkTapAch(false);
   save();
@@ -2481,6 +3342,9 @@ function onClaim() {
   if (!current || current.phase !== "claim") { closeOverlay(); return; }
   current.phase = "step";
   $("claim").hidden = true;
+  $("skipNext").hidden = true;
+  $("overlay").classList.add("stepping");
+  $("overlay").scrollTop = 0;
   STEPS[current.t.id].run($("stage"), finishStep);
 }
 function finishStep(update, html) {
@@ -2547,7 +3411,9 @@ function closeOverlay() {
   $("fx").innerHTML = "";
   $("stage").innerHTML = "";
   current = null;
-  if (lastFocus && lastFocus.focus) lastFocus.focus();
+  // go back to where the player was; if that can't hold focus, land on the Tap button so Space keeps working
+  if (lastFocus && lastFocus !== document.body && lastFocus.isConnected && !lastFocus.closest("[hidden]")) lastFocus.focus();
+  else $("tap").focus();
   if (pendingWitch) { const f = pendingWitch; pendingWitch = null; setTimeout(f, 250); }
 }
 
@@ -2583,7 +3449,7 @@ function closeLibrary() {
 }
 
 /* ---- wiring ---- */
-$("tap").addEventListener("click", next);
+$("tap").addEventListener("click", () => next());
 $("claim").addEventListener("click", onClaim);
 $("openLib").addEventListener("click", openLibrary);
 $("closeLib").addEventListener("click", closeLibrary);
@@ -2593,9 +3459,10 @@ $("library").addEventListener("click", e => {
   if (peek) { const t = RARES.find(x => x.id === peek.dataset.id); playRare(t.id); celebrate(t, true); }
 });
 document.addEventListener("keydown", e => {
-  const open = !$("overlay").hidden || !$("library").hidden || !$("board").hidden || !$("nameDlg").hidden || !$("witchDlg").hidden;
+  const open = anyDialogOpen();
   if (e.key === "Escape") {
     if (!$("overlay").hidden) closeOverlay();
+    else if (!$("bag").hidden) closeBag();
     else if (!$("witchDlg").hidden) closeWitchIntro();
     else if (!$("nameDlg").hidden) { if (state.name) closeNameDlg(); }
     else if (!$("board").hidden) closeBoard();
@@ -2797,7 +3664,11 @@ const TAP_ACH = [
   { id: "t500",   n: 500,   emoji: "🎯", title: "Tap Sharpshooter",      theme: "retro" },
   { id: "t1000",  n: 1000,  emoji: "🏅", title: "Thousand-Tap Legend",   theme: "galaxy" },
   { id: "t5000",  n: 5000,  emoji: "🌋", title: "Unstoppable Thumb",     theme: "midnight" },
-  { id: "t10000", n: 10000, emoji: "👑", title: "Monarch of Taps",       theme: "gold" }
+  { id: "t10000", n: 10000, emoji: "👑", title: "Monarch of Taps",       theme: "gold" },
+  { id: "t10m",   n: 10000000,  emoji: "🌠", title: "Ten-Million Tap Titan", theme: "prism" },
+  { id: "t100m",  n: 100000000, emoji: "🌍", title: "World-Shaking Thumb",   theme: "jade" },
+  { id: "t250m",  n: 250000000, emoji: "🌌", title: "Galactic Tapper",       theme: "cosmos" },
+  { id: "t500m",  n: 500000000, emoji: "♾️", title: "The Eternal Finger",    theme: "eternal" }
 ];
 const STREAK_ACH = [
   { id: "s3",  days: 3,  emoji: "🔥", title: "Warming Up",          theme: "sunset" },
@@ -2814,13 +3685,17 @@ const THEMES = [
   { id: "galaxy",   name: "Galaxy",   unlock: "t1000",  spark: ["🪐", "⭐"],  sw: ["#a46bff", "#0b0620"] },
   { id: "midnight", name: "Midnight", unlock: "t5000",  spark: ["🌙", "✦"],  sw: ["#8bb4ff", "#0a1020"] },
   { id: "gold",     name: "Gold",     unlock: "t10000", spark: ["👑", "💛"],  sw: ["#ffd36b", "#1b1408"] },
+  { id: "prism",    name: "Prism",    unlock: "t10m",   spark: ["🌈", "💎"],  sw: ["#ff7ab6", "#f4f6ff"] },
+  { id: "jade",     name: "Jade",     unlock: "t100m",  spark: ["🐉", "💚"],  sw: ["#2fbf8f", "#0b1f18"] },
+  { id: "cosmos",   name: "Cosmos",   unlock: "t250m",  spark: ["🌌", "☄️"],  sw: ["#ff6bd6", "#05010f"] },
+  { id: "eternal",  name: "Eternal",  unlock: "t500m",  spark: ["♾️", "✨"],  sw: ["#d4a017", "#fffaf0"] },
   { id: "sunset",   name: "Sunset",   unlock: "s3",     spark: ["🌅", "🧡"],  sw: ["#ff8a5c", "#ffd9bf"] },
   { id: "ocean",    name: "Ocean",    unlock: "s7",     spark: ["🫧", "🐚"],  sw: ["#2d9cdb", "#d4f1ff"] },
   { id: "forest",   name: "Forest",   unlock: "s14",    spark: ["🍃", "🌿"],  sw: ["#6fcf6b", "#17251a"] },
   { id: "aurora",   name: "Aurora",   unlock: "s30",    spark: ["💫", "🌌"],  sw: ["#3df2a0", "#06171c"] }
 ];
 const themeById = id => THEMES.find(t => t.id === id) || THEMES[0];
-const themeUnlocked = t => !t.unlock || !!state.ach[t.unlock];
+const themeUnlocked = t => !t.unlock || !!state.ach[t.unlock] || (state.keyThemes || []).includes(t.id);
 function skinSpark() { const s = themeById(state.theme).spark; return s[Math.floor(rand() * s.length)]; }
 function applySkin(id) {
   const t = themeById(id);
@@ -2864,7 +3739,20 @@ function updateStreak() {
   const y = new Date(); y.setDate(y.getDate() - 1);
   const s = state.streak;
   if (s.last !== today) {
-    s.count = s.last === dayKey(y) ? s.count + 1 : 1;
+    if (!s.last || s.last === dayKey(y)) s.count = s.last ? s.count + 1 : 1;
+    else {
+      // days missed since the last visit; Streak Shields cover one missed day each
+      const [ly, lm, ld] = s.last.split("-").map(Number);
+      const missed = Math.round((new Date(new Date().toDateString()) - new Date(ly, lm - 1, ld)) / 86400000) - 1;
+      if (missed > 0 && state.perks && state.perks.streak) {
+        s.count += 1;
+        setTimeout(() => toast("🔥", "Unbreakable Streak", "Your streak lives on!", `${missed} missed day${missed > 1 ? "s" : ""} didn't matter. You're blessed.`), 1500);
+      } else if (missed > 0 && (state.shields || 0) >= missed) {
+        state.shields -= missed;
+        s.count += 1;
+        setTimeout(() => toast("🛡️", "Streak Shield used", "Your streak is safe!", `${missed} missed day${missed > 1 ? "s were" : " was"} covered.`), 1500);
+      } else s.count = 1;
+    }
     s.last = today;
     s.best = Math.max(s.best || 0, s.count);
     save();
@@ -2873,9 +3761,12 @@ function updateStreak() {
 }
 
 /* ---------- toasts ---------- */
-function toast(emoji, kicker, title, sub) {
+function toast(emoji, kicker, title, sub, cls) {
+  // never more than 3 on screen: the oldest makes room
+  const box = $("toasts");
+  while (box.children.length >= 3) box.firstElementChild.remove();
   const el = document.createElement("div");
-  el.className = "toast";
+  el.className = "toast" + (cls ? " " + cls : "");
   el.innerHTML = `<div class="temoji" aria-hidden="true"></div><div><p class="tk"></p><p class="tt"></p>${sub ? '<p class="ts"></p>' : ""}</div>`;
   el.querySelector(".temoji").textContent = emoji;
   el.querySelector(".tk").textContent = kicker;
@@ -2898,7 +3789,7 @@ function hintTick() {
 }
 
 /* ---------- vibration ---------- */
-const VIBES = { star: [60], clover: [80, 40, 80], phoenix: [120, 60, 120, 60, 220], egg: [150, 70, 150, 70, 320], diamond: [200, 80, 200, 80, 400], singularity: [300, 100, 300, 100, 600, 150, 900] };
+const VIBES = { star: [60], clover: [80, 40, 80], phoenix: [120, 60, 120, 60, 220], egg: [150, 70, 150, 70, 320], map: [200, 80, 200, 80, 450], alien: [100, 50, 100, 50, 100, 50, 600], vault: [400, 120, 400, 120, 700], ascend: [500, 150, 500, 150, 800, 200, 1200], diamond: [200, 80, 200, 80, 400], singularity: [300, 100, 300, 100, 600, 150, 900] };
 function vibrateFor(id) { try { if (navigator.vibrate) navigator.vibrate(VIBES[id] || [50]); } catch (_) {} }
 
 /* ---------- sound (Web Audio, no files) ---------- */
@@ -2952,7 +3843,11 @@ function noise(t, dur, o = {}) {
   if (o.wet) { const w = a.createGain(); w.gain.value = o.wet; g.connect(w); w.connect(echo); }
   src.start(s); src.stop(s + dur + .05);
 }
+let lastPop = 0;
 function playPop() {
+  const now = performance.now();
+  if (now - lastPop < 55) return;   // no sound pile-ups during auto-tapping
+  lastPop = now;
   if (!audio()) return;
   const f = 380 + rand() * 260;
   tone(f * 1.7, 0, .11, { to: f * .55, vol: .2 });
@@ -2980,6 +3875,26 @@ function playRare(id) {
     tone(110, 0, 1, { to: 440, type: "sawtooth", vol: .06, lp: 1800, attack: .2 });
     [523, 659, 784, 1047].forEach(f => tone(f, .95, 1.6, { type: "sawtooth", vol: .045, lp: 2600, wet: .5, attack: .03 }));
     tone(1568, 1.0, 1.4, { type: "triangle", vol: .07, wet: .5 });
+  } else if (id === "map") {
+    // a little sea shanty and a splash
+    [392, 523, 494, 440, 392, 523, 659].forEach((f, i) => tone(f, i * .14, .3, { type: "triangle", vol: .11, wet: .3 }));
+    noise(0, .7, { from: 600, to: 2500, vol: .08, q: .6, attack: .2 });
+    [1047, 1319, 1568].forEach((f, i) => tone(f, 1.05 + i * .08, .5, { vol: .06, wet: .5 }));
+  } else if (id === "alien") {
+    // theremin swoop and computer bleeps
+    tone(320, 0, 1.1, { to: 940, vol: .1, attack: .15, wet: .4 });
+    tone(940, 1.05, .9, { to: 520, vol: .09, wet: .5 });
+    [1760, 2093, 1568, 2349, 1976].forEach((f, i) => tone(f, .3 + i * .11, .07, { type: "square", vol: .03 }));
+  } else if (id === "vault") {
+    // heavy bolts, then coins
+    tone(70, 0, .5, { to: 45, vol: .4 }); noise(0, .3, { from: 400, to: 120, vol: .3, q: .8 });
+    tone(70, .45, .5, { to: 45, vol: .4 }); noise(.45, .3, { from: 400, to: 120, vol: .3, q: .8 });
+    for (let i = 0; i < 12; i++) tone(2400 + rand() * 1800, 1 + i * .07, .12, { type: "triangle", vol: .05, wet: .3 });
+    [523, 659, 784, 1047].forEach(f => tone(f, 1.3, 1.6, { type: "sawtooth", vol: .04, lp: 2400, wet: .5 }));
+  } else if (id === "ascend") {
+    // a slow heavenly choir
+    [262, 330, 392, 523, 659, 784, 1047].forEach((f, i) => tone(f, i * .12, 4.5 - i * .1, { vol: .06, attack: .8, wet: .6 }));
+    [2093, 2637, 3136, 4186, 3520, 2637].forEach((f, i) => tone(f, 1.4 + i * .14, 1.4, { vol: .035, wet: .7 }));
   } else if (id === "egg") {
     tone(65, 0, 2.4, { vol: .22, attack: .4 });
     tone(98, 0, 2.4, { type: "triangle", vol: .08, attack: .5 });
@@ -3179,12 +4094,16 @@ const WEIRD_LINES = ["Wait… what?", "I have so many questions.", "That doesn't
 const RARE_LINES = {
   star: "A SHOOTING STAR! Quick, make a wish!",
   clover: "Four leaves! Luck is on our side!",
-  phoenix: "A PHOENIX FLAME?! My hat is on fire with excitement!",
+  phoenix: "YOUR FINGERS ARE ON FIRE?! Quick, tap before it goes out!",
   egg: "A DRAGON EGG?! Can we keep it? Please, please, please!",
+  map: "A TREASURE MAP?! Let's dig! I call dibs on anything sparkly!",
+  alien: "ALIENS?! Tell them I said hi! Wait, is my hat on straight?",
+  vault: "THE LOST VAULT?! I'll keep watch. Act natural.",
+  ascend: "You're… GLOWING. Is this ascension?! Can I come too?!",
   diamond: "A MILLION-TO-ONE DIAMOND!! I think I'm going to faint…",
   singularity: "THE SINGULARITY?! I… I have to sit down. You're LEGENDARY!"
 };
-const RARE_RANK = { star: 1, clover: 2, phoenix: 3, egg: 4, diamond: 5, singularity: 6 };
+const RARE_RANK = { star: 1, clover: 2, phoenix: 3, egg: 4, diamond: 5, map: 6, alien: 7, vault: 8, ascend: 9, singularity: 10 };
 const BORED_LINES = ["Are we ever finding anything good?", "*sigh* Still no shooting stars…", "I'll just rest my chin here for a bit.", "Maybe the next one… or the next… or the next…", "Is the luck on vacation?"];
 const IDLE_LINES = ["Hellooo? Still there?", "*yawn* I'll wait right here…", "Tap tap? No? Okay…", "I counted my sparkles twice. Still waiting."];
 const OUTFITS = [
@@ -3440,6 +4359,368 @@ $("themes").addEventListener("click", e => {
   renderExtras();
 });
 
+/* =====================================================================
+   POWERS: abilities (every 300 taps), relics (every 1,000), cosmic relics (every 10,000)
+   ===================================================================== */
+const RARITY = {
+  common:    { name: "Common",    color: "#8f98a8", rank: 1 },
+  uncommon:  { name: "Uncommon",  color: "#2fbf71", rank: 2 },
+  rare:      { name: "Rare",      color: "#4d7cff", rank: 3 },
+  epic:      { name: "Epic",      color: "#a46bff", rank: 4 },
+  legendary: { name: "Legendary", color: "#ff9f1a", rank: 5 },
+  mythic:    { name: "Mythic",    color: "#ff4fd8", rank: 6 }
+};
+const POWER_GROUPS = {
+  ability: { name: "Abilities",      icon: "⚡", every: 300,   chance: .75, rule: "Every 300 of your own taps: 75% chance to find one" },
+  relic:   { name: "Relics",         icon: "🏺", every: 1000,  chance: .5,  rule: "Every 1,000 of your own taps: 50% chance to find one" },
+  cosmic:  { name: "Cosmic Relics",  icon: "🌌", every: 10000, chance: 1,   rule: "Every 10,000 of your own taps: always one" }
+};
+/* w = drop weight inside its group. fx types:
+   luck {mult,taps} · taps {mult,taps} · luckTime {mult,min} · auto {rate,sec} · guarantee {mode,count} · shield · key · combo {list} */
+const POWERS = [
+  // ---- Abilities (tap-based) ----
+  { id: "charm",     group: "ability", rarity: "common",    w: 30,  emoji: "🍀", name: "Lucky Charm",    fx: { type: "luck", mult: 2, taps: 20 } },
+  { id: "double",    group: "ability", rarity: "common",    w: 25,  emoji: "👆", name: "Double Tap",     fx: { type: "taps", mult: 2, taps: 20 } },
+  { id: "stardust",  group: "ability", rarity: "uncommon",  w: 13,  emoji: "🌟", name: "Star Dust",      fx: { type: "luck", mult: 5, taps: 30 } },
+  { id: "triple",    group: "ability", rarity: "uncommon",  w: 12,  emoji: "✌️", name: "Triple Tap",     fx: { type: "taps", mult: 3, taps: 30 } },
+  { id: "lens",      group: "ability", rarity: "rare",      w: 6,   emoji: "🎯", name: "Focus Lens",     fx: { type: "luck", mult: 10, taps: 50 } },
+  { id: "magnet",    group: "ability", rarity: "rare",      w: 5,   emoji: "🧲", name: "Rare Magnet",    fx: { type: "luck", mult: 25, taps: 15 } },
+  { id: "overdrive", group: "ability", rarity: "epic",      w: 2.5, emoji: "🚀", name: "Overdrive",      fx: { type: "luck", mult: 50, taps: 40 } },
+  { id: "warp",      group: "ability", rarity: "epic",      w: 2,   emoji: "⏩", name: "Fast Forward",   fx: { type: "taps", mult: 10, taps: 60 } },
+  { id: "midas",     group: "ability", rarity: "legendary", w: .8,  emoji: "👑", name: "Midas Touch",    fx: { type: "luck", mult: 100, taps: 100 } },
+  { id: "clone",     group: "ability", rarity: "legendary", w: .7,  emoji: "👥", name: "Clone Army",     fx: { type: "taps", mult: 50, taps: 100 } },
+  { id: "fate",      group: "ability", rarity: "mythic",    w: .1,  emoji: "✋", name: "Hand of Fate",   fx: { type: "guarantee", mode: "uniform", count: 1 },
+    note: "Your next tap is a guaranteed rare find, and all nine below The Singularity are equally likely: a 1 in 9 shot at Ascension." },
+  { id: "surge",     group: "ability", rarity: "mythic",    w: .1,  emoji: "💥", name: "Cosmic Surge",   fx: { type: "luck", mult: 1000, taps: 50 } },
+  // ---- Relics (time-based and special) ----
+  { id: "candle",    group: "relic",   rarity: "common",    w: 30,  emoji: "🕯️", name: "Focus Candle",   fx: { type: "luckTime", mult: 3, min: 3 } },
+  { id: "hourglass", group: "relic",   rarity: "uncommon",  w: 20,  emoji: "⌛", name: "Hourglass",      fx: { type: "luckTime", mult: 5, min: 5 } },
+  { id: "autotap",   group: "relic",   rarity: "rare",      w: 14,  emoji: "🤖", name: "Auto-Tapper",    fx: { type: "auto", rate: 3, sec: 60 } },
+  { id: "shield",    group: "relic",   rarity: "rare",      w: 12,  emoji: "🛡️", name: "Streak Shield",  fx: { type: "shield" },
+    note: "Protects your daily streak for one missed day. It waits in reserve and is used automatically." },
+  { id: "clock",     group: "relic",   rarity: "epic",      w: 5,   emoji: "🕰️", name: "Lucky Clock",    fx: { type: "luckTime", mult: 20, min: 10 } },
+  { id: "turbo",     group: "relic",   rarity: "epic",      w: 4,   emoji: "🏎️", name: "Turbo Tapper",   fx: { type: "auto", rate: 10, sec: 120 } },
+  { id: "key",       group: "relic",   rarity: "legendary", w: 1.5, emoji: "🗝️", name: "Skeleton Key",   fx: { type: "key" },
+    note: "Unlocks a random locked theme forever." },
+  { id: "jackpot",   group: "relic",   rarity: "legendary", w: 1.3, emoji: "🎰", name: "Jackpot Hour",   fx: { type: "luckTime", mult: 50, min: 60 } },
+  { id: "chrono",    group: "relic",   rarity: "mythic",    w: .2,  emoji: "🌀", name: "Chrono Crown",
+    fx: { type: "combo", list: [{ type: "luckTime", mult: 500, min: 5 }, { type: "auto", rate: 5, sec: 300 }] },
+    note: "500× luck for 5 minutes while an Auto-Tapper taps 5 times a second." },
+  // ---- Cosmic relics (every 10,000 taps) ----
+  { id: "gravity",   group: "cosmic",  rarity: "epic",      w: 30,  emoji: "🪐", name: "Gravity Well",   fx: { type: "luckTime", mult: 100, min: 30 } },
+  { id: "megaclone", group: "cosmic",  rarity: "epic",      w: 25,  emoji: "🧬", name: "Mega Clone",     fx: { type: "taps", mult: 100, taps: 200 } },
+  { id: "wishwell",  group: "cosmic",  rarity: "legendary", w: 30,  emoji: "⛲", name: "Wishing Well",   fx: { type: "guarantee", mode: "choose", count: 1 },
+    note: "Choose any rare find except The Singularity. You get it on your next tap." },
+  { id: "starfall",  group: "cosmic",  rarity: "legendary", w: 13,  emoji: "☄️", name: "Starfall",       fx: { type: "guarantee", mode: "weighted", count: 10 },
+    note: "Your next 10 taps are all rare finds." },
+  { id: "grand",     group: "cosmic",  rarity: "mythic",    w: 2,   emoji: "🏛️", name: "Grand Collection", fx: { type: "guarantee", list: ["ascend", "vault", "alien", "map", "diamond", "egg", "phoenix", "clover", "star"] },
+    note: "Your next 9 taps give you one of every rare find below The Singularity, from Ascension all the way down to the Shooting Star." }
+];
+const powerById = id => POWERS.find(p => p.id === id);
+function powerDesc(p) {
+  if (p.note) return p.note;
+  const f = p.fx;
+  if (f.type === "luck") return `${f.mult.toLocaleString("en-US")}× luck for ${f.taps} taps`;
+  if (f.type === "taps") return `Every tap counts as ${f.mult} for ${f.taps} taps`;
+  if (f.type === "luckTime") return `${f.mult}× luck for ${f.min} minute${f.min > 1 ? "s" : ""}`;
+  if (f.type === "auto") return `Taps for you ${f.rate}× per second for ${f.sec >= 60 ? (f.sec / 60) + " minute" + (f.sec > 60 ? "s" : "") : f.sec + " seconds"}`;
+  return "";
+}
+function groupChance(p) {
+  const total = POWERS.filter(x => x.group === p.group).reduce((a, x) => a + x.w, 0);
+  return p.w / total;
+}
+const fmtPct = x => x >= .1 ? (x * 100).toFixed(0) + "%" : x >= .01 ? (x * 100).toFixed(1) + "%" : (x * 100).toFixed(2) + "%";
+
+state.inv = state.inv || {};
+state.boosts = state.boosts || [];   // active effects
+state.guar = state.guar || [];       // queued guaranteed rare finds
+state.shields = state.shields || 0;
+state.keyThemes = state.keyThemes || [];
+// powers ever found (so Haul Mode knows what's new); older saves count what's already in the bag
+state.seenPowers = state.seenPowers || Object.keys(state.inv);
+// real taps only (no multipliers, no auto-taps): this is what power rolls count
+if (typeof state.rollTaps !== "number") state.rollTaps = state.taps;
+// Treasure Sense was retired (it changed drop odds); its owners get Unbreakable Streak instead
+if (state.perks && state.perks.sense) { state.perks.streak = 1; delete state.perks.sense; }
+// older saves: the Singularity Seed became the Grand Collection, and no queued guarantee may be The Singularity
+if (state.inv.seed) { state.inv.grand = (state.inv.grand || 0) + state.inv.seed; delete state.inv.seed; }
+state.guar = state.guar.filter(m => m !== "singularity");
+
+function liveBoosts() {
+  const now = Date.now();
+  state.boosts = state.boosts.filter(b => (b.taps === undefined || b.taps > 0) && (b.until === undefined || b.until > now));
+  return state.boosts;
+}
+/* Luck boosts don't stack: only the strongest active one counts (Blessed Luck sets a floor). */
+function luckFloor() { const l = (state.perks && state.perks.luck) || 0; return l ? 3 + (l - 1) * 2 : 1; }
+function currentLuck() {
+  return liveBoosts().filter(b => b.kind === "luck").reduce((m, b) => Math.max(m, b.mult), luckFloor());
+}
+function currentTapMult() {
+  const golden = 1 + ((state.perks && state.perks.fingers) || 0);
+  return Math.min(1e4, liveBoosts().filter(b => b.kind === "taps").reduce((m, b) => m * b.mult, 1) * golden);
+}
+/* Power drop odds are fixed: nothing changes how often rolls happen or what they give. */
+function dropEvery(g) { return POWER_GROUPS[g].every; }
+/* The rare find for this tap: a queued guarantee first, otherwise a luck-boosted roll. */
+function nextRare() {
+  // guarantees never hand out The Singularity: it can only come from a normal 1-in-a-billion roll
+  const pool = RARES.filter(t => t.id !== "singularity");
+  while (state.guar.length) {
+    const mode = state.guar.shift();
+    if (mode === "uniform") return pool[Math.floor(rand() * pool.length)];
+    if (mode === "weighted") { const t = rollRare(1e9); if (t && t.id !== "singularity") return t; return pool[pool.length - 1]; }
+    const t = pool.find(x => x.id === mode);
+    if (t) return t;
+  }
+  return rollRare(currentLuck());
+}
+function applyFx(f, p) {
+  const now = Date.now();
+  if (f.type === "luck" || f.type === "taps") state.boosts.push({ pid: p.id, kind: f.type, mult: f.mult, taps: f.taps, max: f.taps });
+  else if (f.type === "luckTime") state.boosts.push({ pid: p.id, kind: "luck", mult: f.mult, until: now + f.min * 60000, max: f.min * 60000 });
+  else if (f.type === "auto") state.boosts.push({ pid: p.id, kind: "auto", rate: f.rate, until: now + f.sec * 1000, max: f.sec * 1000 });
+  else if (f.type === "guarantee") {
+    if (f.list) f.list.forEach(m => state.guar.push(m));
+    else for (let i = 0; i < f.count; i++) state.guar.push(f.mode);
+  }
+  else if (f.type === "shield") state.shields = (state.shields || 0) + 1;
+  else if (f.type === "combo") f.list.forEach(x => applyFx(x, p));
+}
+function usePower(id, choice) {
+  const p = powerById(id);
+  if (!p || !state.inv[id]) return;
+  if (p.fx.type === "guarantee" && p.fx.mode === "choose" && !choice) { renderWishChooser(); return; }
+  if (p.fx.type === "key") {
+    const locked = THEMES.filter(t => !themeUnlocked(t));
+    if (!locked.length) { toast("🗝️", "Nothing to unlock", "Every theme is already yours", "Keep the key for later."); return; }
+    const t = locked[Math.floor(rand() * locked.length)];
+    state.keyThemes.push(t.id);
+    toast("🗝️", "Skeleton Key", `${t.name} theme unlocked!`, "Pick it in the award library.", "t-" + p.rarity);
+  } else if (choice) {
+    state.guar.push(choice);
+    const t = RARES.find(x => x.id === choice);
+    toast(p.emoji, p.name, `${t.emoji} ${t.title} is coming`, "Tap once to receive it.", "t-" + p.rarity);
+  } else {
+    applyFx(p.fx, p);
+    toast(p.emoji, "Power activated", p.name, powerDesc(p), "t-" + p.rarity);
+  }
+  state.inv[id]--;
+  if (!state.inv[id]) delete state.inv[id];
+  playAch();
+  if (witchShown()) { react("hop"); say(RARITY[p.rarity].rank >= 4 ? `Whoa, ${p.name}! Let's GO!` : `${p.name}! Good luck!`, 2600); }
+  save();
+  renderBoosts();
+  renderBag();
+}
+/* Called after every tap: count down tap-based boosts and roll for new drops. */
+function afterTap(manual) {
+  state.boosts.forEach(b => { if (b.taps !== undefined) b.taps--; });
+  liveBoosts();
+  // Power rolls count only real taps, one per tap: boosters, blessings and auto-tappers never change them.
+  if (manual) {
+    state.rollTaps++;
+    Object.entries(POWER_GROUPS).forEach(([g, info]) => {
+      if (state.rollTaps % dropEvery(g) === 0 && rand() < info.chance) dropPower(g);
+    });
+  }
+  checkHaulEnd();
+  renderBoostsSoon();
+}
+
+/* ---------- Haul Mode ----------
+   While luck is wild, repeat finds and everyday drops pile into one treasure sack
+   instead of a popup each. A single Haul Report comes when the frenzy ends. */
+let haul = null;
+function hauling() {
+  return currentLuck() >= 10 || currentTapMult() >= 10 || state.guar.length >= 2 || liveBoosts().some(b => b.kind === "auto");
+}
+function addHaul(kind, id, emoji, name) {
+  if (!haul) {
+    haul = { rares: {}, powers: {}, total: 0 };
+    toast("💰", "Haul Mode", "Your luck is wild!", "Only new items and 1-in-1,000+ finds will pop up. Everything else goes into your treasure sack.", "t-legendary");
+  }
+  const bucket = haul[kind];
+  bucket[id] = bucket[id] || { emoji, name, n: 0 };
+  bucket[id].n++;
+  haul.total++;
+}
+function haulSummary(h) {
+  const line = b => Object.values(b).sort((a, c) => c.n - a.n).map(x => `${x.emoji}×${x.n}`).join("  ");
+  const r = Object.values(h.rares).reduce((a, x) => a + x.n, 0), p = Object.values(h.powers).reduce((a, x) => a + x.n, 0);
+  return { title: `${h.total} thing${h.total === 1 ? "" : "s"} hauled`, sub: [r ? `Rare finds: ${line(h.rares)}` : "", p ? `Powers: ${line(h.powers)}` : ""].filter(Boolean).join(" · ") };
+}
+function checkHaulEnd() {
+  if (!haul || hauling()) return;
+  const s = haulSummary(haul);
+  haul = null;
+  toast("💰", "Haul report", s.title, s.sub + " · all saved", "t-legendary");
+  playRare("clover");
+  if (witchShown()) { setFace("happy", 2500); react("big"); floaties(10, ["💰", "✨", "🪙"]); say("Look at that haul! We're RICH!", 3200); }
+  renderBoostsSoon();
+}
+function peekHaul() {
+  if (!haul) return;
+  const s = haulSummary(haul);
+  toast("💰", "Haul so far", s.title, s.sub);
+}
+let boostsQueued = false;
+function renderBoostsSoon() {
+  if (boostsQueued) return;
+  boostsQueued = true;
+  requestAnimationFrame(() => { boostsQueued = false; renderBoosts(); });
+}
+function dropPower(group) {
+  const list = POWERS.filter(p => p.group === group);
+  const total = list.reduce((a, p) => a + p.w, 0);
+  let r = rand() * total, p = list[0];
+  for (const x of list) { if ((r -= x.w) < 0) { p = x; break; } }
+  const isNew = !state.seenPowers.includes(p.id);
+  if (isNew) state.seenPowers.push(p.id);
+  state.inv[p.id] = (state.inv[p.id] || 0) + 1;
+  const rar = RARITY[p.rarity];
+  // in Haul Mode, only a power you've never had before pops up; repeats go into the sack
+  if (hauling() && !isNew) { addHaul("powers", p.id, p.emoji, p.name); updateBagBadge(); return; }
+  toast(p.emoji, `${POWER_GROUPS[group].icon} ${rar.name} ${group === "ability" ? "ability" : group === "relic" ? "relic" : "cosmic relic"} found`, p.name, powerDesc(p) + " · saved in your bag", "t-" + p.rarity);
+  if (rar.rank >= 6) { playRare("diamond"); vibrateFor("diamond"); }
+  else if (rar.rank >= 5) { playRare("clover"); vibrateFor("clover"); }
+  else playAch();
+  if (witchShown() && rar.rank >= 4) { setFace("shock", 2200); react("big"); say(rar.rank >= 6 ? `A MYTHIC ${p.name.toUpperCase()}?! Don't waste it!` : `Ooh, a ${rar.name.toLowerCase()} ${p.name}!`, 3200); }
+  updateBagBadge();
+}
+
+/* ---------- active boosts bar ---------- */
+function fmtLeft(ms) { const s = Math.ceil(ms / 1000); return s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : `${s}s`; }
+function renderBoosts() {
+  const list = liveBoosts();
+  const luck = currentLuck(), tm = currentTapMult();
+  const parts = [];
+  if (luck > 1) parts.push(`<span class="boost-total">🍀 ${luck.toLocaleString("en-US")}× luck</span>`);
+  if (tm > 1) parts.push(`<span class="boost-total">👆 ×${tm.toLocaleString("en-US")} taps</span>`);
+  if (state.guar.length) parts.push(`<span class="boost-total">✨ ${state.guar.length} guaranteed rare${state.guar.length > 1 ? "s" : ""}</span>`);
+  if (haul) parts.unshift(`<button type="button" class="haul-chip" id="haulChip" title="See what you've hauled so far">💰 Haul ×${haul.total.toLocaleString("en-US")}</button>`);
+  const perks = state.perks || {};
+  BLESSINGS.forEach(b => { if (perks[b.id]) parts.push(`<span class="boost-total blessed" title="${b.desc(perks[b.id] - 1)}">😇 ${b.name}${perks[b.id] > 1 ? " Lv " + perks[b.id] : ""}</span>`); });
+  list.forEach(b => {
+    const p = powerById(b.pid);
+    const left = b.taps !== undefined ? `${b.taps} taps` : fmtLeft(b.until - Date.now());
+    const frac = b.taps !== undefined ? b.taps / b.max : (b.until - Date.now()) / b.max;
+    parts.push(`<span class="boost" style="--c:${RARITY[p ? p.rarity : "common"].color};--f:${Math.max(0, Math.min(1, frac))}"><span aria-hidden="true">${p ? p.emoji : "✨"}</span>${left}</span>`);
+  });
+  $("boosts").innerHTML = parts.join("");
+}
+let autoAcc = 0;
+setInterval(() => {
+  const autos = liveBoosts().filter(b => b.kind === "auto");
+  if (autos.length && !anyDialogOpen() && !document.hidden) {
+    autoAcc += autos.reduce((a, b) => a + b.rate, 0) * .1;
+    let n = 0;
+    while (autoAcc >= 1 && n < 4) { autoAcc -= 1; n++; next(true); }
+  } else autoAcc = 0;
+}, 100);
+setInterval(() => { checkHaulEnd(); if (state.boosts.length || haul) renderBoosts(); }, 1000);
+$("boosts").addEventListener("click", e => { if (e.target.closest("#haulChip")) peekHaul(); });
+
+/* ---------- the bag (inventory + guide) ---------- */
+let bagTab = "inv", bagFocus = null;
+function anyDialogOpen() {
+  return ["overlay", "library", "board", "nameDlg", "witchDlg", "bag"].some(id => $(id) && !$(id).hidden);
+}
+function updateBagBadge() {
+  const n = Object.values(state.inv).reduce((a, b) => a + b, 0);
+  $("openBag").textContent = "🎒 " + n;
+}
+function openBag(tab) {
+  bagFocus = document.activeElement;
+  if (tab) bagTab = tab;
+  renderBag();
+  $("bag").hidden = false;
+  $("closeBag").focus();
+}
+function closeBag() { $("bag").hidden = true; if (bagFocus && bagFocus.focus) bagFocus.focus(); }
+function rarityChip(r) { return `<span class="rar rar-${r}">${RARITY[r].name}</span>`; }
+function renderBag() {
+  updateBagBadge();
+  document.querySelectorAll(".bag-tab").forEach(b => b.classList.toggle("on", b.dataset.tab === bagTab));
+  $("bagInv").hidden = bagTab !== "inv";
+  $("bagGuide").hidden = bagTab !== "guide";
+  if (bagTab === "inv") {
+    const owned = POWERS.filter(p => state.inv[p.id]).sort((a, b) => RARITY[b.rarity].rank - RARITY[a.rarity].rank);
+    const nextIn = g => (dropEvery(g) - (state.rollTaps % dropEvery(g))).toLocaleString("en-US");
+    const active = liveBoosts();
+    $("bagInv").innerHTML = `
+      <div class="next-drops">
+        <span>⚡ next ability roll in <b>${nextIn("ability")}</b> taps</span>
+        <span>🏺 relic roll in <b>${nextIn("relic")}</b></span>
+        <span>🌌 cosmic relic in <b>${nextIn("cosmic")}</b></span>
+      </div>
+      ${active.length || state.guar.length || state.shields ? `<h3 class="libh">Active now</h3><div class="boosts in-bag">${$("boosts").innerHTML}${state.shields ? `<span class="boost-total">🛡️ ${state.shields} streak shield${state.shields > 1 ? "s" : ""} ready</span>` : ""}</div>` : ""}
+      <h3 class="libh">Your powers</h3>
+      ${owned.length ? `<ul class="bag-list">${owned.map(p => `
+        <li class="bag-item" style="--c:${RARITY[p.rarity].color}">
+          <span class="bi-emoji" aria-hidden="true">${p.emoji}</span>
+          <div class="bi-info"><p class="bi-name">${p.name} <span class="bi-count">×${state.inv[p.id]}</span></p><p class="bi-desc">${rarityChip(p.rarity)} ${powerDesc(p)}</p></div>
+          <button class="bi-use" type="button" data-use="${p.id}">Use</button>
+        </li>`).join("")}</ul>`
+        : `<p class="bag-empty">Your bag is empty. Keep tapping: every 300 taps you might find an ability, every 1,000 a relic, and every 10,000 a cosmic relic.</p>`}
+      <p class="note">Luck boosts don't stack: if several are active, only the strongest counts (the others keep ticking down). Tap boosts do multiply. Power drops only count your own real taps, so no boost changes them. Timed boosts keep running while the app is closed. No boost can touch The Singularity. Its odds are a secret.</p>`;
+  } else {
+    $("bagGuide").innerHTML = Object.entries(POWER_GROUPS).map(([g, info]) => `
+      <h3 class="libh">${info.icon} ${info.name}</h3>
+      <p class="guide-rule">${info.rule}</p>
+      <ul class="bag-list">${POWERS.filter(p => p.group === g).map(p => {
+        const c = groupChance(p) * info.chance;
+        return `<li class="bag-item guide" style="--c:${RARITY[p.rarity].color}">
+          <span class="bi-emoji" aria-hidden="true">${p.emoji}</span>
+          <div class="bi-info"><p class="bi-name">${p.name}</p><p class="bi-desc">${rarityChip(p.rarity)} ${powerDesc(p)}</p></div>
+          <span class="bi-odds" title="Chance at each roll">${fmtPct(c)}<small>${c < 1 ? "1 in " + Math.round(1 / c).toLocaleString("en-US") : "per roll"}</small></span>
+        </li>`;
+      }).join("")}</ul>`).join("") +
+      `<p class="note">Percent = chance at each roll. Luck multiplies the chance of every rare find except The Singularity, which nothing can boost (and whose odds nobody knows). Luck boosts don't stack: only the strongest active one counts. Tap boosts make each tap count more toward trophies. Drop odds are fixed: only your own real taps count toward ability, relic and cosmic rolls, one per tap, and no booster, blessing or auto-tapper changes that.</p>`;
+  }
+}
+function renderWishChooser() {
+  bagTab = "inv";
+  const choices = RARES.filter(t => t.id !== "singularity");
+  $("bagInv").innerHTML = `
+    <div class="wish-choose">
+      <p class="qline">⛲ The Wishing Well listens…</p>
+      <p class="bi-desc">Choose the rare find you want on your next tap.</p>
+      <div class="wish-grid">${choices.map(t => `<button type="button" class="wish-pick" data-pick="${t.id}"><span aria-hidden="true">${t.emoji}</span>${t.title}<small>${fmtOdds(t.odds)}</small></button>`).join("")}</div>
+      <button class="linkish" type="button" id="wishCancel">Keep the Wishing Well for later</button>
+    </div>`;
+  $("bagInv").querySelector(".wish-pick").focus();
+}
+$("openBag").addEventListener("click", () => openBag());
+$("closeBag").addEventListener("click", closeBag);
+$("bag").addEventListener("click", e => {
+  if (e.target === $("bag")) { closeBag(); return; }
+  const tab = e.target.closest(".bag-tab");
+  if (tab) { bagTab = tab.dataset.tab; renderBag(); return; }
+  const use = e.target.closest("[data-use]");
+  if (use) { usePower(use.dataset.use); return; }
+  const pick = e.target.closest("[data-pick]");
+  if (pick) { usePower("wishwell", pick.dataset.pick); return; }
+  if (e.target.id === "wishCancel") renderBag();
+});
+updateBagBadge();
+renderBoosts();
+
+/* ---------- no double-tap zoom ----------
+   CSS touch-action handles most phones; older iPhones still zoom on a quick
+   second tap, so cancel that tap's zoom and press the button ourselves. */
+let lastTouchEnd = 0;
+document.addEventListener("touchend", e => {
+  const now = Date.now();
+  const quick = now - lastTouchEnd < 350;
+  lastTouchEnd = now;
+  if (!quick || e.target.closest("input, textarea, select, label, a")) return;
+  e.preventDefault();
+  const btn = e.target.closest("button");
+  if (btn && !btn.disabled && !btn.classList.contains("hold")) btn.click();
+}, { passive: false });
+
 /* ---------- start-up ---------- */
 applySkin(state.theme);
 renderMute();
@@ -3448,6 +4729,15 @@ const quietStreak = checkStreakAch(true);
 const quietTaps = checkTapAch(true);
 if (quietStreak + quietTaps > 0 && state.taps > 0) setTimeout(() => toast("🏆", "Welcome back", "You've unlocked " + (quietStreak + quietTaps) + " achievement" + (quietStreak + quietTaps > 1 ? "s" : ""), "See them and their themes in the award library."), 1200);
 if (!state.hintDone) $("firstHint").hidden = false;
+/* time capsules from the Singularity that have reached their opening day */
+(() => {
+  const ex = state.awards.singularity && state.awards.singularity.extra;
+  const ready = ((ex && ex.capsules) || []).filter(c => !c.seen && new Date(c.opens) <= new Date());
+  if (!ready.length) return;
+  ready.forEach(c => { c.seen = true; });
+  save();
+  setTimeout(() => toast("📬", "Time capsule ready", "A message from your past self", "Open the award library to read it."), 2000);
+})();
 showBuddy();
 if (state.taps >= 100 && !state.witch.met) setTimeout(openWitchIntro, 1500);
 
@@ -3459,4 +4749,5 @@ else if (!state.name) openNameDlg();
 startOnline();
 </script>
 
-</body></html>
+</body>
+</html>
