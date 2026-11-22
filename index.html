@@ -1,0 +1,3462 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Tap for a Sentence</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Nunito:wght@500;700;800&family=Cinzel:wght@700;900&family=Unbounded:wght@600;800&family=Pacifico&display=swap">
+<style>
+/* Layout: a soft "mood" backdrop that takes on the current color, one floating card,
+   a sticker-like emoji, the sentence, a chunky 3D button. Rare finds take over the
+   whole screen, each with its own world. Awards live in a library sheet. */
+:root {
+  --mood: #ff5d73;
+  --mood-fg: #ffffff;
+  --base: #f6f4fb;
+  --card: #ffffffee;
+  --sheet: #ffffff;
+  --fg: #221f36;
+  --muted: #6e6a88;
+  --line: #00000014;
+  --locked: #e9e6f2;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Nunito", "Segoe UI", system-ui, sans-serif;
+  --bg: color-mix(in srgb, var(--mood) 14%, var(--base));
+  --blob: color-mix(in srgb, var(--mood) 45%, var(--base));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --base: #14131c; --card: #201e2cee; --sheet: #1d1b28; --fg: #f2f0fb; --muted: #a6a2c0; --line: #ffffff16; --locked: #2c2a3b; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --base: #14131c; --card: #201e2cee; --sheet: #1d1b28; --fg: #f2f0fb; --muted: #a6a2c0; --line: #ffffff16; --locked: #2c2a3b; color-scheme: dark; }
+
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--body);
+  display: grid;
+  place-items: center;
+  padding-block: 24px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: background-color .6s ease;
+}
+
+.blob {
+  position: fixed;
+  width: 60vmax; height: 60vmax;
+  border-radius: 50%;
+  background: var(--blob);
+  filter: blur(70px);
+  opacity: .55;
+  z-index: 0;
+  transition: background-color .6s ease;
+  animation: drift 18s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.blob.a { top: -25vmax; left: -20vmax; }
+.blob.b { bottom: -30vmax; right: -20vmax; animation-delay: -9s; opacity: .35; }
+@keyframes drift { to { transform: translate(8vmax, 6vmax) scale(1.1); } }
+
+.card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 520px;
+  background: var(--card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  border-radius: 32px;
+  padding: 68px 28px 28px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+  box-shadow: 0 30px 60px -30px color-mix(in srgb, var(--mood) 55%, transparent);
+  transition: box-shadow .6s ease;
+}
+.eyebrow {
+  margin: 0;
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.eyebrow.rare { color: var(--mood); }
+.sticker {
+  width: clamp(110px, 30vw, 136px);
+  aspect-ratio: 1;
+  max-width: 100%;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--mood) 22%, transparent);
+  display: grid;
+  place-items: center;
+  transition: background-color .5s ease;
+}
+.emoji { font-size: clamp(58px, 16vw, 76px); line-height: 1; }
+.sentence {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(1.35rem, 5vw, 1.85rem);
+  line-height: 1.22;
+  letter-spacing: -.01em;
+  text-wrap: balance;
+  margin: 0;
+  min-height: 3.7em;
+  display: grid;
+  place-items: center;
+  max-width: 24ch;
+}
+.pop { animation: pop .4s cubic-bezier(.3,1.6,.5,1); }
+.rise { animation: rise .35s ease-out; }
+@keyframes pop { from { transform: scale(.4) rotate(-15deg); } to { transform: none; } }
+@keyframes rise { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+#tap {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: var(--mood-fg);
+  background: var(--mood);
+  border: 0;
+  border-radius: 999px;
+  padding: 18px 42px;
+  cursor: pointer;
+  box-shadow: 0 6px 0 color-mix(in srgb, var(--mood) 62%, #000);
+  transition: background-color .3s, box-shadow .3s, color .3s, transform .08s;
+  -webkit-tap-highlight-color: transparent;
+}
+#tap:active { transform: translateY(4px); box-shadow: 0 2px 0 color-mix(in srgb, var(--mood) 62%, #000); }
+.ghost {
+  font-family: var(--body);
+  font-weight: 800;
+  font-size: .9rem;
+  color: var(--fg);
+  background: transparent;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  padding: 12px 18px;
+  cursor: pointer;
+}
+.ghost:hover { border-color: color-mix(in srgb, var(--mood) 60%, transparent); }
+button:focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
+
+.footer {
+  width: 100%;
+  border-top: 1px dashed var(--line);
+  padding-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.count { color: var(--muted); font-size: .85rem; font-weight: 700; font-variant-numeric: tabular-nums; margin: 0; }
+.trail { display: flex; gap: 4px; font-size: 1.15rem; min-height: 1.4em; min-width: 0; }
+.trail span { animation: rise .3s ease-out; }
+.trail span:nth-child(n+2) { opacity: .75; }
+.trail span:nth-child(n+5) { opacity: .45; }
+.hint { color: var(--muted); font-size: .8rem; margin: 0; }
+kbd { font-family: var(--body); font-weight: 800; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+
+.bit {
+  position: fixed;
+  z-index: 5;
+  pointer-events: none;
+  font-size: 22px;
+  animation: fly .9s cubic-bezier(.2,.7,.4,1) forwards;
+}
+@keyframes fly { to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(.6); opacity: 0; } }
+
+/* ---------- Rare find takeover ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow-y: auto;
+  display: grid;
+  place-items: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 32px) max(20px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 32px) max(20px, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+  background: var(--o-bg);
+  color: var(--o-fg);
+  animation: fadein .5s ease;
+}
+@keyframes fadein { from { opacity: 0; } }
+.overlay:focus, .library:focus { outline: none; }
+.overlay::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: var(--o-texture, none);
+  pointer-events: none;
+}
+.fx { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+.pt { position: absolute; top: 0; left: 0; line-height: 1; will-change: transform; }
+.pt.fall    { animation: fall var(--d) linear var(--delay) infinite; }
+.pt.rise    { animation: up var(--d) ease-in var(--delay) infinite; }
+.pt.twinkle { animation: twinkle var(--d) ease-in-out var(--delay) infinite; }
+.pt.streak  { animation: streak var(--d) linear var(--delay) infinite; }
+@keyframes fall    { from { transform: translate(var(--x), -10vh) rotate(0); } to { transform: translate(calc(var(--x) + 6vw), 110vh) rotate(360deg); } }
+@keyframes up      { from { transform: translate(var(--x), 110vh) scale(1); opacity: 1; } to { transform: translate(calc(var(--x) - 4vw), -10vh) scale(.4); opacity: 0; } }
+@keyframes twinkle { 0%, 100% { transform: translate(var(--x), var(--y)) scale(.4); opacity: .15; } 50% { transform: translate(var(--x), var(--y)) scale(1); opacity: 1; } }
+@keyframes streak  { 0% { transform: translate(calc(var(--x) - 30vw), calc(var(--y) - 30vh)); opacity: 0; } 10% { opacity: 1; } 60%, 100% { transform: translate(calc(var(--x) + 50vw), calc(var(--y) + 50vh)); opacity: 0; } }
+
+.prize {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  animation: arrive .9s cubic-bezier(.2,1.3,.4,1);
+}
+@keyframes arrive { from { transform: scale(.6) translateY(30px); opacity: 0; } }
+.odds {
+  font-family: var(--body);
+  font-weight: 800;
+  font-size: .78rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  padding: 6px 14px;
+  margin: 0;
+  color: var(--o-accent);
+  font-variant-numeric: tabular-nums;
+}
+.greet { margin: 0; font-family: var(--body); font-weight: 700; font-size: 1.05rem; opacity: .9; }
+.halo {
+  position: relative;
+  isolation: isolate;
+  width: 150px;
+  aspect-ratio: 1;
+  max-width: 100%;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--o-disc);
+  margin-block: 10px;
+}
+.halo::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: var(--o-halo);
+  filter: blur(8px);
+  z-index: -1;
+  animation: spin 5s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.halo .big { font-size: 84px; line-height: 1; animation: bob 3s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-6px) scale(1.04); } }
+.ptitle {
+  margin: 0;
+  font-family: var(--o-font);
+  font-size: clamp(2rem, 9vw, 3.1rem);
+  line-height: 1.05;
+  text-wrap: balance;
+  color: var(--o-title, var(--o-fg));
+}
+.pline {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(1.1rem, 4.4vw, 1.35rem);
+  line-height: 1.3;
+  text-wrap: balance;
+  max-width: 30ch;
+}
+.paward {
+  margin: 4px 0 0;
+  font-size: .9rem;
+  font-weight: 700;
+  opacity: .85;
+}
+.paward strong { color: var(--o-accent); }
+.claim {
+  margin-top: 6px;
+  font-family: var(--body);
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--o-btnfg);
+  background: var(--o-accent);
+  border: 0;
+  border-radius: 999px;
+  padding: 16px 30px;
+  cursor: pointer;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--o-accent) 25%, transparent), 0 12px 30px -10px var(--o-accent);
+}
+
+/* interactive moment inside each rare find */
+.stage { width: 100%; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.stage:empty { display: none; }
+.slabel { font-family: var(--body); font-weight: 800; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--o-accent); }
+.field {
+  width: 100%;
+  box-sizing: border-box;
+  font: 700 1.1rem/1.4 var(--body);
+  color: var(--o-fg);
+  background: color-mix(in srgb, var(--o-fg) 10%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--o-accent) 60%, transparent);
+  border-radius: 16px;
+  padding: 14px 16px;
+  resize: none;
+  text-align: center;
+}
+.field:focus { outline: 3px solid var(--o-accent); outline-offset: 2px; }
+.field::placeholder { color: color-mix(in srgb, var(--o-fg) 50%, transparent); }
+.shint { margin: 0; font-size: .85rem; font-weight: 700; opacity: .8; }
+.stage.launch > * { animation: launch .7s ease-in forwards; }
+@keyframes launch { to { transform: translateY(-50vh) scale(.3); opacity: 0; } }
+
+.cert {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1.5px solid color-mix(in srgb, var(--o-accent) 60%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--o-fg) 8%, transparent);
+  animation: arrive .6s cubic-bezier(.2,1.3,.4,1);
+}
+.cert-kicker { margin: 0; font-size: .72rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--o-accent); }
+.cert-big { margin: 0; font-family: var(--o-font); font-size: 1.45rem; line-height: 1.3; overflow-wrap: anywhere; text-wrap: balance; }
+.cert-small { margin: 0; font-size: .85rem; font-weight: 700; opacity: .85; font-variant-numeric: tabular-nums; }
+.swatch { display: inline-block; width: .8em; height: .8em; border-radius: 50%; vertical-align: -1px; border: 1px solid #0003; }
+
+.named { position: absolute; top: 9%; left: 50%; transform: translateX(-50%); white-space: nowrap; color: #ffd36b; font: 700 1rem "Cinzel", Georgia, serif; letter-spacing: .12em; text-shadow: 0 0 14px #ffd36b; animation: fadein 1.2s ease; }
+
+.gem {
+  --shine: 0;
+  font-size: 76px;
+  line-height: 1;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  filter: drop-shadow(0 0 calc(var(--shine) * 34px) #a8f4ff) brightness(calc(1 + var(--shine) * .45));
+  transform: scale(calc(1 + var(--shine) * .25));
+  transition: filter .25s, transform .25s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hold {
+  position: relative;
+  overflow: hidden;
+  font: 800 1.05rem var(--body);
+  color: var(--o-btnfg);
+  background: var(--o-accent);
+  border: 0;
+  border-radius: 999px;
+  padding: 16px 34px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--o-accent) 25%, transparent);
+}
+.hold .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #ff6a2b, #ffe9a8); transition: width .1s linear; }
+.hold .hl { position: relative; }
+
+.leaves { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 320px; }
+.leaf {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font: 800 1rem var(--body);
+  color: #1e6b2a;
+  background: #ffffffd9;
+  border: 0;
+  border-radius: 18px;
+  padding: 16px 10px;
+  cursor: pointer;
+  transition: transform .15s;
+}
+.leaf:hover { transform: translateY(-2px); }
+.leaf span { font-size: 1.6rem; }
+.t-clover .slabel, .t-clover .cert-kicker { color: #1e6b2a; }
+.t-clover .cert { border-color: #1e6b2a55; background: #ffffff8c; }
+
+/* 1 in 1,000,000,000 */
+.t-singularity {
+  --o-bg: radial-gradient(circle at 50% 38%, #2b1556 0%, #0a0518 55%, #000 100%);
+  --o-fg: #f3ecff;
+  --o-accent: #ffd36b;
+  --o-btnfg: #1b1030;
+  --o-font: "Cinzel", Georgia, serif;
+  --o-disc: radial-gradient(circle, #1a0d33 40%, #000 100%);
+  --o-halo: conic-gradient(#ffd36b, #ff8bd8, #8be9ff, #b48bff, #ffd36b);
+}
+.t-singularity .ptitle {
+  font-weight: 900;
+  letter-spacing: .04em;
+  background: linear-gradient(90deg, #ffd36b, #ff8bd8, #8be9ff, #ffd36b);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+@keyframes shimmer { to { background-position: 300% 0; } }
+
+/* 1 in 1,000,000 */
+.t-diamond {
+  --o-bg: linear-gradient(160deg, #041d2a 0%, #0d5674 55%, #8fe4ff 100%);
+  --o-texture: repeating-conic-gradient(from 10deg at 50% 40%, #ffffff0d 0 12deg, transparent 12deg 24deg);
+  --o-fg: #eafcff;
+  --o-accent: #a8f4ff;
+  --o-btnfg: #052a3a;
+  --o-font: "Unbounded", "Segoe UI", sans-serif;
+  --o-disc: linear-gradient(135deg, #0b3e55, #06202d);
+  --o-halo: conic-gradient(#ffffff, #a8f4ff, #3fb8e0, #ffffff, #a8f4ff, #3fb8e0, #ffffff);
+}
+.t-diamond .ptitle { font-weight: 800; text-transform: uppercase; letter-spacing: .02em; font-size: clamp(1.7rem, 7.5vw, 2.6rem); text-shadow: 0 0 24px #a8f4ff99; }
+
+/* 1 in 100,000 */
+.t-egg {
+  --o-bg: radial-gradient(circle at 50% 40%, #1f6b55 0%, #0b2f27 55%, #04140f 100%);
+  --o-texture: radial-gradient(circle at 50% 0, transparent 9px, #ffffff0c 10px 11px, transparent 12px) 0 0 / 24px 14px;
+  --o-fg: #eafff6;
+  --o-accent: #7cf0c0;
+  --o-btnfg: #04201a;
+  --o-font: "Cinzel", Georgia, serif;
+  --o-disc: radial-gradient(circle, #0f4a3b 40%, #04140f 100%);
+  --o-halo: conic-gradient(#7cf0c0, #ffd36b, #2fbf8f, #7cf0c0);
+}
+.t-egg .ptitle { font-weight: 900; color: #b9ffe2; text-shadow: 0 0 26px #2fbf8f; }
+.egg-btn { font-size: 84px; line-height: 1; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; filter: drop-shadow(0 0 calc(var(--warm, 0) * 30px) #ffd36b); transition: filter .25s; }
+.egg-btn.shake { animation: eggshake .35s; }
+@keyframes eggshake { 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } }
+
+/* 1 in 10,000 */
+.t-phoenix {
+  --o-bg: radial-gradient(circle at 50% 115%, #ffc04d 0%, #f0561f 32%, #6d0f14 70%, #1e0306 100%);
+  --o-fg: #fff2df;
+  --o-accent: #ffcf5a;
+  --o-btnfg: #4a0a0c;
+  --o-font: "Unbounded", "Segoe UI", sans-serif;
+  --o-disc: radial-gradient(circle, #4a0a0c 40%, #1e0306 100%);
+  --o-halo: conic-gradient(#ffcf5a, #ff6a2b, #c3131f, #ff6a2b, #ffcf5a);
+}
+.t-phoenix .ptitle { font-weight: 800; text-shadow: 0 0 30px #ff6a2b; }
+
+/* 1 in 1,000 */
+.t-clover {
+  --o-bg: linear-gradient(180deg, #e4fad6 0%, #8bd676 55%, #2f8a3c 100%);
+  --o-texture: radial-gradient(circle at 20% 15%, #ffffff80 0 2px, transparent 3px) 0 0 / 46px 46px;
+  --o-fg: #0f3a17;
+  --o-accent: #ffffff;
+  --o-btnfg: #1e6b2a;
+  --o-title: #1e6b2a;
+  --o-font: "Pacifico", "Segoe Script", cursive;
+  --o-disc: radial-gradient(circle, #ffffff 50%, #d9f7c8 100%);
+  --o-halo: radial-gradient(circle, #fff6a8, #b9f59a 60%, transparent 72%);
+}
+.t-clover .odds { color: #1e6b2a; }
+.t-clover .pline { color: #0f3a17; }
+.t-clover .paward strong { color: #ffffff; text-shadow: 0 1px 0 #1e6b2a; }
+
+/* 1 in 100 */
+.t-star {
+  --o-bg: linear-gradient(180deg, #100834 0%, #3a1f7a 60%, #ff7ab6 120%);
+  --o-fg: #fdf6ff;
+  --o-accent: #ffe27a;
+  --o-btnfg: #2a1360;
+  --o-font: "Pacifico", "Segoe Script", cursive;
+  --o-disc: radial-gradient(circle, #2a1360 40%, #100834 100%);
+  --o-halo: conic-gradient(#ffe27a, #ff7ab6, #8a6bff, #ffe27a);
+}
+.t-star .ptitle { color: #ffe27a; text-shadow: 0 0 22px #ff7ab6aa; }
+
+/* ---------- Award library ---------- */
+.library {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  background: color-mix(in srgb, #000 45%, transparent);
+  display: grid;
+  place-items: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 20px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 20px) max(16px, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+  overflow-y: auto;
+  animation: fadein .25s ease;
+}
+.shelf {
+  width: 100%;
+  max-width: 520px;
+  background: var(--sheet);
+  color: var(--fg);
+  border-radius: 28px;
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.shelf header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.shelf h2 { margin: 0; font-family: var(--display); font-weight: 800; font-size: 1.5rem; }
+.shelf .sub { margin: 2px 0 0; color: var(--muted); font-size: .88rem; }
+.slots { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.slot {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+.medal {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  background: var(--o-bg);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--o-accent) 60%, transparent);
+}
+.slot.locked .medal { background: var(--locked); box-shadow: none; color: var(--muted); font-family: var(--display); font-weight: 800; font-size: 22px; }
+.slot .info { min-width: 0; }
+.slot .name { margin: 0; font-family: var(--display); font-weight: 800; font-size: 1.02rem; }
+.slot .meta { margin: 2px 0 0; color: var(--muted); font-size: .82rem; font-variant-numeric: tabular-nums; }
+.slot .tier {
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--locked);
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+.slot .extra { margin: 6px 0 0; font-size: .85rem; font-weight: 700; color: var(--fg); overflow-wrap: anywhere; }
+.slot .peek { margin-top: 6px; font: 800 .78rem var(--body); color: var(--fg); background: transparent; border: 1.5px solid var(--line); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.note { margin: 0; color: var(--muted); font-size: .8rem; }
+
+/* ---------- player chip, leaderboard button, name + leaderboard sheets ---------- */
+.who {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  max-width: calc(100% - 100px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 800 .85rem var(--body);
+  color: var(--fg);
+  background: color-mix(in srgb, var(--mood) 14%, transparent);
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px 8px 10px;
+  cursor: pointer;
+}
+.who .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--mood); flex: none; }
+.who .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.iconbtn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: border-color .2s, transform .15s;
+}
+.iconbtn:hover { border-color: color-mix(in srgb, var(--mood) 60%, transparent); transform: translateY(-1px); }
+.iconbtn svg { width: 22px; height: 22px; }
+
+.namebox { display: flex; flex-direction: column; gap: 10px; }
+.namebox input {
+  width: 100%;
+  box-sizing: border-box;
+  font: 800 1.15rem var(--body);
+  color: var(--fg);
+  background: transparent;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+.namebox input:focus { outline: 3px solid var(--mood); outline-offset: 2px; border-color: transparent; }
+.namebox .err { margin: 0; min-height: 1.2em; font-size: .85rem; font-weight: 700; color: #d6344b; }
+.primary {
+  font: 800 1.05rem var(--display);
+  color: var(--mood-fg);
+  background: var(--mood);
+  border: 0;
+  border-radius: 999px;
+  padding: 15px 26px;
+  cursor: pointer;
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--mood) 62%, #000);
+}
+.primary:active { transform: translateY(3px); box-shadow: 0 2px 0 color-mix(in srgb, var(--mood) 62%, #000); }
+
+.board-status { margin: 0; font-size: .88rem; font-weight: 700; color: var(--muted); }
+.board-status:empty { display: none; }
+.ranks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 52vh; overflow-y: auto; }
+.rank {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+}
+.rank.me { background: color-mix(in srgb, var(--mood) 16%, transparent); border-color: color-mix(in srgb, var(--mood) 45%, transparent); }
+.rank .pos { font: 800 1.05rem var(--display); text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
+.rank .pos.medal-pos { font-size: 1.4rem; }
+.rank .who2 { min-width: 0; }
+.rank .pname { margin: 0; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank .pname .you { font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-left: 6px; }
+.rank .finds { margin: 1px 0 0; font-size: .9rem; min-height: 1em; }
+.rank .ptaps { font: 800 1.05rem var(--display); font-variant-numeric: tabular-nums; text-align: right; }
+.rank .ptaps small { display: block; font: 700 .7rem var(--body); color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.board-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .85rem; color: var(--muted); font-weight: 700; }
+.board-foot strong { color: var(--fg); }
+.linkish { font: 800 .85rem var(--body); color: var(--fg); background: none; border: 0; padding: 4px 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* ---------- layout wrapper so the witch can sit beside the card ---------- */
+.playwrap { position: relative; z-index: 1; width: 100%; max-width: 520px; }
+.iconbtn.mute { right: 68px; }
+.who { max-width: calc(100% - 150px); }
+.stats { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.streak { margin: 0; font-size: .85rem; font-weight: 800; color: var(--fg); font-variant-numeric: tabular-nums; }
+.streak:empty { display: none; }
+.first-hint { margin: -6px 0 0; font-size: .88rem; font-weight: 700; font-style: italic; color: var(--muted); transition: opacity .8s ease; }
+.first-hint.fade { opacity: 0; }
+
+/* ---------- toasts ---------- */
+.toasts {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  width: min(92vw, 380px);
+  pointer-events: none;
+}
+.toast {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 12px 12px;
+  background: var(--sheet);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 18px 40px -18px #0008, 0 0 0 3px color-mix(in srgb, var(--mood) 35%, transparent);
+  animation: toastIn .5s cubic-bezier(.2,1.4,.4,1), toastOut .4s ease-in 3.8s forwards;
+}
+.toast .temoji { font-size: 34px; line-height: 1; text-align: center; animation: tbounce 1s ease-in-out 2; }
+.toast .tk { margin: 0; font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.toast .tt { margin: 1px 0 0; font: 800 1.05rem var(--display); }
+.toast .ts { margin: 2px 0 0; font-size: .8rem; font-weight: 700; color: var(--muted); }
+@keyframes toastIn { from { transform: translateY(40px) scale(.8); opacity: 0; } }
+@keyframes toastOut { to { transform: translateY(20px); opacity: 0; } }
+@keyframes tbounce { 30% { transform: translateY(-8px) rotate(-10deg) scale(1.15); } 60% { transform: rotate(8deg); } }
+
+.skiprow { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; padding: 12px; border: 1px solid var(--line); border-radius: 16px; font-size: .85rem; color: var(--muted); cursor: pointer; }
+.skiprow strong { color: var(--fg); font-size: .92rem; }
+.skiprow input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--mood); }
+.skipnext { font: 800 .85rem var(--body); color: var(--o-fg); background: none; border: 0; padding: 6px 4px; text-decoration: underline; text-underline-offset: 3px; opacity: .85; cursor: pointer; }
+.t-clover .skipnext { color: #1e6b2a; }
+
+/* ---------- award library extra sections ---------- */
+.libh { margin: 8px 0 0; font: 800 .78rem var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.slot.ach .medal { background: color-mix(in srgb, var(--mood) 24%, transparent); box-shadow: none; }
+.witchinfo { display: grid; grid-template-columns: 84px 1fr; gap: 14px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 18px; }
+.witchinfo .mini { width: 84px; }
+.witchinfo .mini.locked { filter: grayscale(1) brightness(.3); opacity: .5; }
+.witchinfo p { margin: 0; }
+.witchinfo .wn { font: 800 1.05rem var(--display); }
+.witchinfo .wl { margin-top: 3px; font-size: .85rem; font-weight: 700; color: var(--muted); }
+.witchinfo .pips { display: flex; gap: 4px; margin-top: 6px; }
+.witchinfo .pips span { width: 18px; height: 6px; border-radius: 3px; background: var(--locked); }
+.witchinfo .pips span.on { background: var(--mood); }
+.themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.theme-chip {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 10px;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+  font: 700 .8rem var(--body);
+  min-width: 0;
+}
+.theme-chip .sw { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); }
+.theme-chip .tn { display: block; font-weight: 800; font-size: .92rem; }
+.theme-chip .tu { display: block; color: var(--muted); font-size: .72rem; overflow-wrap: anywhere; }
+.theme-chip.on { border-color: var(--mood); background: color-mix(in srgb, var(--mood) 12%, transparent); }
+.theme-chip.locked { cursor: not-allowed; opacity: .7; }
+.theme-chip.locked .sw { filter: grayscale(1); opacity: .5; }
+
+/* ---------- witch buddy ---------- */
+.buddy { position: absolute; left: calc(100% + 6px); bottom: 26px; width: 132px; z-index: 3; animation: buddyIn .8s cubic-bezier(.2,1.4,.4,1); }
+@keyframes buddyIn { from { transform: translateY(30px) scale(.5); opacity: 0; } }
+.wfx { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; position: relative; }
+.witch { display: block; width: 100%; height: auto; overflow: visible; }
+.buddy .witch { animation: wfloat 3.4s ease-in-out infinite; }
+.buddy .wbody { transform-origin: 70px 150px; animation: wsway 5s ease-in-out infinite; }
+@keyframes wfloat { 50% { transform: translateY(-6px); } }
+@keyframes wsway { 25% { transform: rotate(2deg); } 75% { transform: rotate(-2deg); } }
+.witch .f { display: none; }
+.witch[data-face="normal"] .f-normal, .witch[data-face="happy"] .f-happy, .witch[data-face="shock"] .f-shock,
+.witch[data-face="confused"] .f-confused, .witch[data-face="bored"] .f-bored, .witch[data-face="sleepy"] .f-sleepy { display: inline; }
+.witch .eyes { transform-box: fill-box; transform-origin: center; animation: wblink 4.6s infinite; }
+@keyframes wblink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+.witch .w-chin, .witch .w-wand, .witch .w-neck, .witch .w-gold, .witch .w-crown, .witch .w-aura, .witch .w-ribbon, .witch .w-cat, .witch .w-bat { display: none; }
+.witch[data-face="bored"] .w-chin { display: inline; }
+.witch.has-wand .w-wand, .witch.has-neck .w-neck, .witch.has-gold .w-gold, .witch.has-crown .w-crown,
+.witch.has-aura .w-aura, .witch.has-ribbon .w-ribbon, .witch.has-cat .w-cat, .witch.has-bat .w-bat { display: inline; }
+.witch.has-crown .w-hatstar { display: none; }
+.witch .w-aura { transform-box: fill-box; transform-origin: center; animation: waura 2.6s ease-in-out infinite; }
+@keyframes waura { 50% { transform: scale(1.08); opacity: .7; } }
+.witch .w-star { transform-box: fill-box; transform-origin: center; animation: wtwinkle 1.8s ease-in-out infinite; }
+@keyframes wtwinkle { 50% { transform: scale(1.25) rotate(20deg); } }
+.witch .w-bat { animation: wbat 1.6s ease-in-out infinite; }
+@keyframes wbat { 50% { transform: translate(112px, 24px); } }
+.wfx.r-giggle { animation: rgiggle .6s; }
+.wfx.r-spin { animation: rspin .8s ease-in-out; }
+.wfx.r-hop { animation: rhop .7s cubic-bezier(.3,1.6,.5,1); }
+.wfx.r-twirl { animation: rtwirl 1s ease-in-out; }
+.wfx.r-big { animation: rbig 1.2s cubic-bezier(.3,1.6,.5,1); }
+.wfx.r-wave .w-arm { transform-origin: 96px 100px; animation: rwave .9s ease-in-out; }
+@keyframes rgiggle { 20%, 60% { transform: rotate(-7deg); } 40%, 80% { transform: rotate(7deg); } }
+@keyframes rspin { to { transform: rotate(360deg); } }
+@keyframes rhop { 40% { transform: translateY(-22px) scale(1.05); } }
+@keyframes rtwirl { 50% { transform: scaleX(-1) translateY(-8px); } }
+@keyframes rbig { 30% { transform: scale(1.3) translateY(-14px); } 60% { transform: scale(.95); } }
+@keyframes rwave { 25%, 75% { transform: rotate(-30deg); } 50% { transform: rotate(10deg); } }
+.bubble {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 190px;
+  padding: 9px 13px;
+  background: var(--sheet);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  font: 800 .84rem/1.3 var(--body);
+  text-align: center;
+  box-shadow: 0 10px 24px -12px #0007;
+  animation: rise .25s ease-out;
+  z-index: 2;
+}
+.floaty { position: absolute; left: 50%; top: 35%; pointer-events: none; font-size: 18px; animation: floaty 1.4s ease-out forwards; z-index: 3; }
+@keyframes floaty { to { transform: translate(var(--fx), -90px) scale(1.3); opacity: 0; } }
+.witch-intro { align-items: center; text-align: center; }
+.witch-intro .intro-art { width: 170px; margin-top: -6px; }
+.witch-intro .intro-art .witch { animation: wfloat 3.4s ease-in-out infinite; }
+.witch-intro h2 { margin: 0; font: 800 1.6rem var(--display); }
+.witch-intro .intro-text { margin: 0; line-height: 1.5; max-width: 38ch; }
+
+@media (max-width: 860px) {
+  .buddy { left: auto; right: 4px; bottom: auto; top: -100px; width: 98px; }
+  .bubble { left: auto; right: calc(100% + 4px); bottom: auto; top: 18px; transform: none; max-width: 170px; }
+}
+
+/* ---------- unlockable themes (fixed looks; they win over light/dark) ---------- */
+:root[data-skin] { --skin-bg: linear-gradient(transparent, transparent); }
+:root[data-skin="sakura"] { --base: #fde7ef; --card: #fff7faee; --sheet: #fff7fa; --fg: #4a2233; --muted: #9c6178; --line: #c2709433; --locked: #f6d5e2; --display: "Pacifico", "Segoe Script", cursive; color-scheme: light;
+  --skin-bg: radial-gradient(circle at 15% 20%, #ffc4da88 0 90px, transparent 91px), radial-gradient(circle at 85% 75%, #ffd9e7 0 140px, transparent 141px); }
+:root[data-skin="sakura"] .sentence { font-weight: 400; letter-spacing: 0; }
+:root[data-skin="neon"] { --base: #07060f; --card: #110d22ee; --sheet: #110d22; --fg: #f3f0ff; --muted: #9a93c9; --line: #ff3df244; --locked: #221b3d; --display: "Unbounded", "Segoe UI", sans-serif; color-scheme: dark;
+  --skin-bg: linear-gradient(#ff3df212 1px, transparent 1px) 0 0 / 32px 32px, linear-gradient(90deg, #3df2ff12 1px, transparent 1px) 0 0 / 32px 32px; }
+:root[data-skin="neon"] .sentence { text-shadow: 0 0 18px color-mix(in srgb, var(--mood) 75%, transparent); font-size: clamp(1.1rem, 4.2vw, 1.5rem); }
+:root[data-skin="retro"] { --base: #f1e2c0; --card: #fff5dfee; --sheet: #fff5df; --fg: #2e2118; --muted: #7d6650; --line: #2e211833; --locked: #ead9b4; --display: "Courier New", Courier, monospace; color-scheme: light;
+  --skin-bg: repeating-linear-gradient(0deg, #0000000a 0 2px, transparent 2px 5px); }
+:root[data-skin="retro"] .card { border: 3px solid var(--fg); border-radius: 10px; box-shadow: 8px 8px 0 var(--fg); }
+:root[data-skin="galaxy"] { --base: #0b0620; --card: #1a1236dd; --sheet: #1a1236; --fg: #efe9ff; --muted: #a99bd6; --line: #ffffff1c; --locked: #2a1f4d; --display: "Cinzel", Georgia, serif; color-scheme: dark;
+  --skin-bg: radial-gradient(1.5px 1.5px at 20% 30%, #fff, transparent) 0 0 / 180px 180px, radial-gradient(1px 1px at 70% 80%, #fff, transparent) 0 0 / 140px 140px, radial-gradient(2px 2px at 45% 60%, #c9b6ff, transparent) 0 0 / 230px 230px; }
+:root[data-skin="midnight"] { --base: #0a1020; --card: #121a30ee; --sheet: #121a30; --fg: #dfe8ff; --muted: #8b9ac2; --line: #ffffff18; --locked: #1e2742; color-scheme: dark;
+  --skin-bg: radial-gradient(circle at 85% 12%, #fff6d6 0 34px, #fff6d630 35px 60px, transparent 61px); }
+:root[data-skin="gold"] { --base: #1b1408; --card: #2a1f0cee; --sheet: #2a1f0c; --fg: #ffe9b0; --muted: #c9a75e; --line: #ffd36b40; --locked: #3a2c12; --display: "Cinzel", Georgia, serif; color-scheme: dark;
+  --skin-bg: repeating-linear-gradient(45deg, #ffd36b0c 0 12px, transparent 12px 24px); }
+:root[data-skin="gold"] .card { border-color: #ffd36b88; }
+:root[data-skin="sunset"] { --base: #ffd9bf; --card: #fff5eeee; --sheet: #fff5ee; --fg: #4a1f12; --muted: #95553e; --line: #4a1f1222; --locked: #f7d2bd; color-scheme: light;
+  --skin-bg: linear-gradient(180deg, #ffb38a55, #ff7ab655); }
+:root[data-skin="ocean"] { --base: #d4f1ff; --card: #f4fbffee; --sheet: #f4fbff; --fg: #0b3448; --muted: #4a7a90; --line: #0b344822; --locked: #cde9f5; color-scheme: light;
+  --skin-bg: radial-gradient(circle at 30% 70%, #ffffffaa 0 6px, transparent 7px) 0 0 / 70px 90px, radial-gradient(circle at 70% 30%, #ffffff88 0 4px, transparent 5px) 0 0 / 110px 130px; }
+:root[data-skin="forest"] { --base: #17251a; --card: #203322ee; --sheet: #203322; --fg: #e6f2dc; --muted: #9db894; --line: #ffffff18; --locked: #2c4130; color-scheme: dark;
+  --skin-bg: radial-gradient(circle at 0 100%, #3c6b3a66 0 35%, transparent 36%), radial-gradient(circle at 100% 0, #2f5a3366 0 30%, transparent 31%); }
+:root[data-skin="aurora"] { --base: #06171c; --card: #0e282edd; --sheet: #0e282e; --fg: #e4fff8; --muted: #8dc2b6; --line: #ffffff1a; --locked: #183b42; --display: "Unbounded", "Segoe UI", sans-serif; color-scheme: dark;
+  --skin-bg: linear-gradient(160deg, #3df2a033, transparent 40%, #a46bff33 70%, transparent); }
+:root[data-skin="aurora"] .sentence { font-size: clamp(1.1rem, 4.2vw, 1.5rem); }
+:root[data-skin] body { background: var(--skin-bg), var(--bg); }
+
+@media (max-width: 420px) {
+  .slot { grid-template-columns: 48px 1fr; }
+  .medal { width: 48px; height: 48px; font-size: 24px; }
+  .slot .tier { grid-column: 2; justify-self: start; }
+}
+@media (hover: none) { .hint { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .pop, .rise, .trail span, .blob, .prize, .halo::before, .halo .big, .t-singularity .ptitle { animation: none; }
+  .bit, .fx { display: none; }
+}
+</style>
+
+<div class="blob a" aria-hidden="true"></div>
+<div class="blob b" aria-hidden="true"></div>
+
+<div class="playwrap">
+<main class="card">
+  <button class="iconbtn mute" id="mute" type="button" aria-label="Mute sounds" aria-pressed="false" title="Sound on/off">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".18"/>
+      <g id="muteWaves"><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></g>
+      <g id="muteX" style="display:none"><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g>
+    </svg>
+  </button>
+  <button class="who" id="who" type="button" title="Change your username"><span class="dot" aria-hidden="true"></span><span class="nm" id="whoName">Pick a name</span></button>
+  <button class="iconbtn" id="openBoard" type="button" aria-label="Open the leaderboard" title="Leaderboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
+      <rect x="9" y="5" width="6" height="15" rx="1" fill="currentColor" fill-opacity=".18"/>
+      <rect x="2.5" y="10" width="6.5" height="10" rx="1"/>
+      <rect x="15" y="13" width="6.5" height="7" rx="1"/>
+    </svg>
+  </button>
+  <p class="eyebrow" id="eyebrow">Fact of the moment</p>
+  <div class="sticker"><div class="emoji" id="emoji" aria-hidden="true">🦄</div></div>
+  <p class="sentence" id="sentence" aria-live="polite">A unicorn just borrowed your umbrella.</p>
+  <div class="actions">
+    <button id="tap" type="button">Tap me!</button>
+    <button id="copy" class="ghost" type="button">Copy</button>
+    <button id="share" class="ghost" type="button">Share</button>
+    <button id="openLib" class="ghost" type="button">🏆 0/5</button>
+  </div>
+  <p class="first-hint" id="firstHint" hidden>Some sentences are 1 in a billion… good luck.</p>
+  <p class="hint">or press <kbd>Space</kbd></p>
+  <div class="footer">
+    <div class="trail" id="trail" aria-label="Emojis you've collected"></div>
+    <div class="stats">
+      <p class="streak" id="streak"></p>
+      <p class="count" id="count">0 taps</p>
+    </div>
+  </div>
+</main>
+<div class="buddy" id="buddy" hidden>
+  <div class="bubble" id="bubble" hidden></div>
+  <button class="wfx" id="wfx" type="button" aria-label="Tap Lumi, your witch buddy"></button>
+</div>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<section class="overlay" id="overlay" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="ptitle" hidden>
+  <div class="fx" id="fx" aria-hidden="true"></div>
+  <div class="prize">
+    <p class="odds" id="podds"></p>
+    <p class="greet" id="pgreet"></p>
+    <div class="halo"><span class="big" id="pemoji" aria-hidden="true"></span></div>
+    <h1 class="ptitle" id="ptitle"></h1>
+    <p class="pline" id="pline"></p>
+    <p class="paward" id="paward"></p>
+    <div class="stage" id="stage"></div>
+    <button class="claim" id="claim" type="button"></button>
+    <button class="skipnext" id="skipNext" type="button" hidden>Skip repeats from now on</button>
+  </div>
+</section>
+
+<section class="library" id="library" role="dialog" aria-modal="true" aria-labelledby="libTitle" hidden>
+  <div class="shelf">
+    <header>
+      <div>
+        <h2 id="libTitle">Award Library</h2>
+        <p class="sub" id="libSub">0 of 5 rare finds collected</p>
+      </div>
+      <button class="ghost" id="closeLib" type="button">Close</button>
+    </header>
+    <label class="skiprow" for="skipRepeats">
+      <input type="checkbox" id="skipRepeats">
+      <span><strong>Skip repeat celebrations</strong><br>Rare finds you already own show a small note instead of the full screen.</span>
+    </label>
+    <h3 class="libh">Rare finds</h3>
+    <ul class="slots" id="slots"></ul>
+    <h3 class="libh">Tap achievements</h3>
+    <ul class="slots" id="tapAch"></ul>
+    <h3 class="libh">Streak achievements</h3>
+    <ul class="slots" id="streakAch"></ul>
+    <h3 class="libh">Pocket witch</h3>
+    <div class="witchinfo" id="witchInfo"></div>
+    <h3 class="libh">Themes</h3>
+    <div class="themes" id="themes"></div>
+    <p class="note">Every tap has a tiny chance to reveal a rare find. Awards are saved in this browser.</p>
+  </div>
+</section>
+
+<section class="library" id="witchDlg" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="witchTitle" hidden>
+  <div class="shelf witch-intro">
+    <div class="intro-art" id="introArt"></div>
+    <h2 id="witchTitle">A friend appeared!</h2>
+    <p class="intro-text">Hi hi! I'm <strong>Lumi</strong>, a pocket witch-in-training. Your 100 taps woke me up from my nap! I'll sit right beside you, cheer for every rare find, and show off new outfits as you keep tapping. Tap me any time to say hi.</p>
+    <button class="primary" id="witchOk" type="button">Nice to meet you, Lumi!</button>
+  </div>
+</section>
+
+<section class="library" id="nameDlg" role="dialog" aria-modal="true" aria-labelledby="nameTitle" hidden>
+  <form class="shelf" id="nameForm" novalidate>
+    <header>
+      <div>
+        <h2 id="nameTitle">Pick a username</h2>
+        <p class="sub">It shows next to your taps on the online leaderboard.</p>
+      </div>
+      <button class="ghost" id="nameCancel" type="button" hidden>Cancel</button>
+    </header>
+    <div class="namebox">
+      <label class="slabel" for="nameInput" style="color: var(--muted)">Username</label>
+      <input id="nameInput" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="e.g. TapMaster">
+      <p class="err" id="nameErr" aria-live="polite"></p>
+      <button class="primary" type="submit">Start tapping</button>
+    </div>
+  </form>
+</section>
+
+<section class="library" id="board" role="dialog" aria-modal="true" aria-labelledby="boardTitle" hidden>
+  <div class="shelf">
+    <header>
+      <div>
+        <h2 id="boardTitle">Leaderboard</h2>
+        <p class="sub">Most taps of all time</p>
+      </div>
+      <button class="ghost" id="closeBoard" type="button">Close</button>
+    </header>
+    <p class="board-status" id="boardStatus" aria-live="polite"></p>
+    <ol class="ranks" id="ranks"></ol>
+    <div class="board-foot">
+      <span>Playing as <strong id="boardMe">—</strong></span>
+      <button class="linkish" id="changeName" type="button">Change username</button>
+    </div>
+  </div>
+</section>
+
+<script>
+const sentences = [
+  "A unicorn just borrowed your umbrella.",
+  "The moon is secretly made of pancakes.",
+  "Your socks are planning a vacation without you.",
+  "A penguin wants to be your study buddy.",
+  "Somewhere, a cat is judging your playlist.",
+  "Today is a great day to dance in the kitchen.",
+  "A tiny dragon lives in your toaster.",
+  "Bananas are just smiles you can eat.",
+  "The clouds spelled your name this morning.",
+  "A squirrel is writing your biography.",
+  "Your shadow thinks you walk too fast.",
+  "Pizza is a circle that wants to be a triangle.",
+  "A goldfish just won the lottery.",
+  "Your plants are gossiping about you, kindly.",
+  "The ocean waved at you. Wave back!",
+  "A robot learned to sneeze today.",
+  "Your future self says thanks for the snacks.",
+  "Every frog is a prince on a coffee break.",
+  "The stars are playing hide and seek again.",
+  "A llama just complimented your haircut.",
+  "Your pillow misses you already.",
+  "Someone out there is smiling because of you.",
+  "Ducks hold meetings at exactly 3 p.m.",
+  "A cupcake is cheering for you right now.",
+  "The wind is humming your favorite song.",
+  "Your keyboard dreams of being a piano.",
+  "An octopus can high-five eight people at once.",
+  "Rainbows are the sky showing off.",
+  "A snail just beat its personal best.",
+  "You are 100% more awesome than yesterday.",
+  "The fridge light only turns off when you look away.",
+  "A bear in sunglasses is waiting for the bus.",
+  "Your next sandwich will be legendary.",
+  "Tomatoes are fruits pretending to be vegetables.",
+  "A comet just made a wish on you.",
+  "Your houseplant gave you a five-star review.",
+  "A dinosaur would have loved your shoes.",
+  "The microwave is counting down to something big.",
+  "A cloud shaped like you just floated by.",
+  "Somewhere a potato is living its best life.",
+  "Your favorite mug thinks you're the best.",
+  "Jellyfish have been doing yoga for millions of years.",
+  "A hedgehog just tried to hug a cactus. They're friends now.",
+  "The number seven is jealous of your vibe.",
+  "A wizard misplaced their hat in your closet."
+];
+/* ---------- sentence packs ----------
+   tag "cute" makes Lumi happy, "weird" makes her confused. One line per sentence. */
+const CLASSIC_CUTE = new Set([0, 3, 5, 7, 8, 13, 14, 16, 18, 19, 20, 21, 23, 24, 26, 27, 28, 29, 34, 35, 36, 38, 40, 42]);
+const CLASSIC_WEIRD = new Set([1, 2, 6, 9, 10, 11, 12, 15, 17, 22, 25, 30, 31, 33, 37, 39, 41, 43, 44]);
+const PACKS = [];
+function addPack(name, tag, labels, text) {
+  PACKS.push({ name, tag, labels, lines: text.split("\n").map(s => s.trim()).filter(Boolean) });
+}
+
+addPack("Weird facts", "weird", ["Weird fact", "Science says", "Did you know?", "Fun fact"], `
+Clouds weigh more than they look, mostly from feelings.
+Penguins invented the tuxedo and never got credit.
+Your left sock is statistically more adventurous than your right.
+Spoons started out as tiny shovels for soup.
+The moon has never once been on time.
+Snails can nap for three years and call it a long weekend.
+Bubble wrap was first sold as wallpaper.
+Every rainbow has one color nobody has named yet.
+Toasters secretly prefer bagels.
+A group of flamingos is called a flamboyance.
+Honey never spoils, but it does get bored.
+Octopuses have three hearts and zero chill.
+Carrots were purple before they got famous.
+Mountains are just rocks that never stopped trying.
+The first chair was a very confident rock.
+Clocks go clockwise because they're shy.
+Pigeons can recognize faces. They remember yours.
+Sharks are older than trees and never let trees forget it.
+A day on Venus is longer than its year.
+Bananas are berries, but strawberries are not.
+Pineapples take two years to grow, so be patient with them.
+Sea otters hold hands so they don't drift apart.
+Your nose can remember about a trillion smells.
+Hot water can freeze faster than cold water when it's in a hurry.
+Lightning is five times hotter than the surface of the sun.
+Cats spend most of their lives planning naps.
+Giraffes hum quietly at night when nobody is listening.
+Every umbrella has lost at least one argument with the wind.
+The dot over a lowercase i is called a tittle.
+Koalas sleep up to twenty hours and still look tired.
+Stairs are just a hill that got organized.
+The inventor of the frisbee was turned into a frisbee.
+Young sunflowers follow the sun, then retire facing east.
+Butterflies taste things with their feet.
+Ketchup was once sold as medicine.
+Rubber ducks have crossed entire oceans by accident.
+Your bones are technically always a little wet.
+Hummingbirds can fly backwards just to show off.
+Peanuts are not nuts. They are beans in disguise.
+Some cats are allergic to people.
+Wombats are surprisingly fast and fully aware of it.
+Polar bears have black skin under all that fluff.
+A jiffy is an actual unit of time.
+Elephants are the only animals that can't jump, and they're fine with it.
+Saturn would float in a big enough bathtub.
+Most dust bunnies have never seen a real bunny.
+Fortune cookies were invented far from where you'd guess.
+The first oranges were green, and some still are.
+Owls can't move their eyes, so they move everything else.
+Crows hold grudges longer than most people.
+Your heart beats about a hundred thousand times a day without asking.
+A blue whale's heart is the size of a small car.
+Pistachios can burst into flames if stacked too eagerly.
+Tea bags were invented by accident and nobody complained.
+Avocados are fruit pretending to be a salad.
+Sloths can hold their breath longer than dolphins.
+Light from the sun is about eight minutes old when it reaches you.
+Dogs can tell what time it is by how the house smells.
+Ravens can learn to talk if they feel like it.
+There are more trees on Earth than stars in our galaxy.
+The tongue is the only muscle that loves soup.
+Sneezes travel faster than most bicycles.
+Some frogs can freeze solid and thaw out fine.
+Horses can't vomit, so they choose snacks very carefully.
+Pumpkins are technically giant berries with ambition.
+The Eiffel Tower grows a little taller in summer.
+Deserts can get snow, and the cactuses are never ready.
+Strawberries wear their seeds on the outside like sequins.
+A shrimp's heart is in its head.
+Bees can recognize human faces and judge them gently.
+Cows produce more milk when they listen to calm music.
+The longest hiccup streak lasted decades.
+Goldfish can learn tricks if the snacks are good enough.
+Space smells a bit like seared steak, according to astronauts.
+Apples float because they're a quarter air.
+The shortest war in history lasted under an hour.
+Tomatoes and potatoes are cousins who never call.
+Flamingos are pink because of what they eat.
+The ocean is mostly unexplored because it's very wet.
+A snail has thousands of tiny teeth and no dentist.
+Clouds move because they have somewhere to be.
+Cucumbers are mostly water with a crunchy attitude.
+Jellyfish have been drifting around longer than dinosaurs.
+Ants never sleep the way we do, which explains a lot.
+Your fingerprints are one of a kind, unlike your passwords.
+Rain has a smell, and it has a name: petrichor.
+Glass is a solid that gives off strong liquid energy.
+Kangaroos can't walk backwards, so they never retreat.
+The color orange was named after the fruit.
+Mosquitoes are drawn to people who just ate bananas, allegedly.
+A bolt of lightning could toast thousands of slices of bread.
+Most pillows are secretly heavier than they were when new.
+Zebras' stripes might help keep flies confused.
+Puffins mate for life and share parenting duties.
+Some trees talk to each other through underground fungus.
+Snow is not white. It just reflects every color at once.
+Seahorse dads are the ones who carry the babies.
+Moths are just butterflies that work the night shift.
+Every cloud in the sky is technically a floating lake.
+Cats can make over a hundred different sounds and use them all at 3 a.m.
+`);
+
+addPack("Absurd headlines", "weird", ["Breaking news", "Just in", "Headline", "Developing story"], `
+Local cat elected mayor, promises more naps.
+Scientists confirm Monday is 12% longer than other days.
+Man trips over nothing, nothing declines to comment.
+Town's only traffic light quits to pursue a career in disco.
+Moon spotted during the day, refuses to explain itself.
+Area dog finally catches tail, has no plan for what comes next.
+Pancake stack reaches record height, syrup still on its way.
+Squirrel buries acorn, forgets location, blames the economy.
+Library book returned 80 years late, fine paid entirely in apologies.
+Cloud shaped like a duck demands to be taken seriously.
+Village bans the word "moist" after unanimous vote.
+Penguin colony declares itself formal-wear capital of the world.
+Wi-Fi password changed, entire household in mourning.
+Grandma beats teen at video game, retires undefeated.
+Leftover pizza tastes better the next day, study finally confirms.
+Snowman reported missing after a surprisingly warm afternoon.
+Goose takes over park, sets up toll booth on bridge.
+Tooth fairy announces new exchange rates.
+Lost remote found inside couch for the fourth time this week.
+Rubber duck completes solo voyage across bathtub.
+Sock drawer achieves peace after decades of unmatched conflict.
+Alarm clock snoozed nine times, files formal complaint.
+Dog learns to open fridge, family enters new era.
+Weather forecast correct for once, meteorologist in disbelief.
+Town wakes to find every garden gnome rearranged facing north.
+Cereal box prize turns out to be cereal.
+Pigeon steals entire sandwich in daring daylight heist.
+Cat knocks glass off table, insists it was for science.
+Tortoise wins marathon after everyone else takes a nap.
+Bakery's bread rises so much it reaches the second floor.
+Kid asks why sky is blue, parent still thinking.
+Man finally reads terms and conditions, has questions.
+Toddler declares bedtime unconstitutional.
+Office printer works on first try, staff evacuated as a precaution.
+Frog crowned king of the pond in tiny ceremony.
+Local hamster runs one thousand miles, still hasn't left the cage.
+Banana peel found guilty in slip incident.
+Ghost reports house is too haunted by the living.
+Picnic ruined by ants who brought their own picnic.
+Earth completes another lap around sun, crowd goes mild.
+Mysterious hum in town traced to very happy refrigerator.
+Bee files noise complaint against neighboring lawnmower.
+Spaghetti accidentally spells a word, chef too scared to eat it.
+Family dog promoted to head of household security.
+Escalator breaks, becomes stairs, people furious.
+Nation's socks finally agree on what "matching" means.
+Owl caught staying up past its bedtime, which is always.
+Cookie jar placed on top shelf, toddler begins climbing training.
+Researchers discover new shade of beige, nobody notices.
+Sunflower sues cloud for blocking the view.
+Vending machine gives two snacks, office celebrates national holiday.
+Turtle crosses road, receives standing ovation.
+Bread lands butter side up, physics department closed for the day.
+Garden snail awarded medal for patience.
+Man waves at someone who was waving at someone else, moves to new city.
+Raccoon gang opens 24-hour trash buffet.
+Elevator music tops the charts for the first time in history.
+Seagull steals ice cream, shows zero remorse.
+Puddle declared a lake after very rainy Tuesday.
+Mom finds thing everyone said was lost in under three seconds.
+Local wizard denies involvement in sudden frog surplus.
+Horse wins spelling bee, misspells neigh.
+Kitten adopts golden retriever, both very happy about it.
+Ice cream truck spotted in winter, children confused but grateful.
+Volcano takes a gap year.
+Dad joke so bad it causes a small earthquake.
+Unicorn sighting turns out to be horse wearing party hat.
+Scientists teach plant to wave, plant immediately waves goodbye.
+Robot vacuum declares independence from the living room.
+Banana bread outsells banana by record margin.
+Toaster pops toast so high it reaches orbit.
+Duck seen wearing tiny raincoat, refuses interview.
+Lighthouse keeper admits he's scared of the dark.
+Snowflake turns out to be identical to another snowflake, scientists embarrassed.
+Kids' fort declared an independent nation by its four citizens.
+Dinosaur skeleton found wearing what appears to be a hat.
+Bus arrives early, passengers suspicious.
+Coffee spills on keyboard, accidentally writes award-winning novel.
+Rainbow ends in local man's backyard, no gold reported.
+Lost balloon spotted waving over the ocean.
+Board game night ends peacefully, experts baffled.
+Gravity takes day off, everyone very late to work.
+Cucumbers stage protest against being pickled.
+Town's tallest giraffe finally sees over the fence, unimpressed.
+Tiny dog barks at huge dog, wins argument.
+Superhero spotted waiting in line like everyone else.
+Grocery bag holds, breaking previous record.
+Bubble blown so big it applies for citizenship.
+Teddy bear completes first day of school, reports it was fine.
+Wind steals hat, returns it three towns over.
+Kettle whistles perfect song, opera house sends contract.
+Fish learns to climb tree, other fish not impressed.
+Mail carrier befriends every dog on route, receives hero's welcome.
+Scientists discover cats can count but choose not to.
+Shopping cart with no wobbly wheel discovered, put in museum.
+Hiccups cured by surprise birthday party.
+Moon caught following family's car home, again.
+City celebrates first day without anyone stepping on a Lego.
+Snail wins race after rival stops to smell the roses.
+Pet rock passes away peacefully at age four billion.
+`);
+
+addPack("Fake fortunes", null, ["Your fortune", "The cookie says", "Today's prophecy", "The stars predict"], `
+You will find a coin in a pocket you forgot existed.
+A pigeon will respect you deeply this week.
+Your next sneeze will be legendary.
+You will soon win an argument with a vending machine.
+A stranger will compliment your shoes in a dream.
+Your lucky number is the one on your next receipt.
+Something you lost will return when you stop looking for it.
+You will laugh so hard that juice comes out of your nose.
+A cat will choose you. Accept the honor.
+Tomorrow, every traffic light will turn green just for you.
+You will discover a new favorite snack by accident.
+Someone is about to send you a very good meme.
+An old song will come back into your life at the perfect moment.
+You will finally remember that thing you were trying to remember.
+A cloud will look exactly like your best friend.
+Great fortune awaits you behind the couch cushions.
+You will be the first to see a double rainbow this year.
+Your houseplant is about to grow a brand new leaf.
+The next pizza you eat will have the perfect cheese pull.
+You will hum a tune all day and not know why.
+Beware of stairs that have one step more than you expect.
+A dog will wag at you with its entire body.
+You will receive great news on an ordinary Wednesday.
+Your hair will look amazing on a day nobody sees you.
+The next door you push will actually be a pull.
+You will find the end of the tape on the first try.
+A tiny adventure will begin with the words "wait, what's that?"
+You will make someone smile without even trying.
+The universe is preparing a pleasant surprise in a cereal box.
+You will win the next game of rock paper scissors.
+A lucky penny will find you, heads up.
+You will soon learn a word that changes how you see spoons.
+The bus will wait for you exactly once this month.
+Someone thinks your laugh is the best sound in the world.
+You will take a perfect photo by accident.
+An unexpected snack is in your near future.
+You will be brave about something small, and it will matter.
+Your socks will match tomorrow without any effort.
+The next movie you pick will be a good one.
+A bird will sing directly at you. It means something good.
+You will unlock a door on the first key you try.
+A new friend is closer than you think.
+You will remember a dream that makes you giggle.
+The cookie you choose will be the one with the most chips.
+You will discover you're good at something unexpected.
+Fortune favors the person who takes the last fry.
+A warm drink will fix a cold day.
+You will be the hero of a group chat today.
+Your phone battery will last longer than you expect.
+The next time you sneeze, someone kind will say bless you.
+You will find a song that sounds like the inside of your head.
+Good luck will follow you, but it walks slowly.
+You will be invited to something fun.
+A forgotten birthday card with money inside is waiting for you.
+You will beat your personal best at something silly.
+Someone will save you the comfy seat.
+The next thing you bake will rise beautifully.
+Your plans will work out in a way you didn't plan.
+You will hear a joke so good you'll tell it for years.
+A sunny day is coming, and it has your name on it.
+You will find out you've been pronouncing a word right all along.
+The next shooting star you see will grant half a wish.
+You are about to have a very good hair week.
+Your next adventure will start with a wrong turn.
+A puppy is going to fall asleep on you soon.
+You will win at least one staring contest with a cat.
+An idea you have in the shower will be a good one.
+You will find the perfect stick.
+Tomorrow's breakfast will be unusually delicious.
+Someone you admire is quietly admiring you back.
+You will get every green light on the way to somewhere fun.
+A long line will move surprisingly fast for you.
+You will finally beat that one level.
+The weather will match your mood, and your mood will be great.
+A kind message will arrive at exactly the right time.
+You will learn something cool from a stranger.
+You will find a forgotten chocolate bar.
+Your next nap will be the best nap of the season.
+The next thing you tap will be worth it.
+You will be very lucky at finding parking spots.
+The next fortune you read will also be true.
+A butterfly will land near you and change your week.
+You will discover a hidden talent for whistling.
+Your favorite song will come on when you need it most.
+You will make the perfect cup of tea on the first try.
+Someone will laugh at your joke even if it's terrible.
+A shiny rock will catch your eye. Keep it.
+You will be first in line for something good.
+You will finish a puzzle with no missing pieces.
+Your reflection will look extra cool today.
+The stars say: drink more water and pet more dogs.
+You will soon hear the words "we saved you a slice."
+A tiny miracle will happen and you'll almost miss it.
+You will remember where you put your keys.
+Your bravery will be rewarded with a cookie.
+A rainy day will turn into a great story.
+You will get the window seat when it matters.
+Someone will hold the door for you and mean it.
+You are going to have a good day. The cookie insists.
+A paper airplane you throw this year will fly perfectly.
+`);
+
+addPack("Motivational but wrong", null, ["Life advice", "Motivational poster", "Pro tip", "Wisdom of the day"], `
+Reach for the stars. If you can't, a ladder works too.
+Follow your dreams, unless they involve falling. Then wake up.
+Every expert was once a beginner who got very lucky.
+Believe in yourself, and also in snacks.
+If at first you don't succeed, blame the Wi-Fi.
+The early bird gets the worm. The late bird gets brunch.
+Work smarter, not harder. Or just take a nap.
+Dance like nobody's watching. They are, though.
+Shoot for the moon. Even if you miss, it's a long walk home.
+Never give up, unless it's a jar lid. Then ask for help.
+You miss 100% of the shots you don't take, and some of the ones you do.
+Be the change you want to see in the vending machine.
+Hard work pays off eventually. Laziness pays off right now.
+Today is a gift. That's why it's called Thursday.
+Don't count your chickens. They hate that.
+If life gives you lemons, trade them for cookies.
+Stay positive. Unless it's a test. Then stay negative.
+Go the extra mile. It's usually where the snacks are.
+The best time to plant a tree was twenty years ago. The second best is after lunch.
+Fall seven times, stand up eight, then sit down. You've earned it.
+Be yourself. Everyone else is already taken, and also busy.
+Think outside the box. The box is where the cat is.
+Aim high, but not so high that you lose your hat.
+Champions never quit. They just take very long breaks.
+Success is 1% inspiration and 99% finding your keys.
+Every cloud has a silver lining. Some also have rain.
+When one door closes, check if it was a cupboard.
+Rome wasn't built in a day. It probably had a deadline extension.
+Keep calm and carry snacks.
+Chase your dreams, but stretch first.
+Teamwork makes the dream work, unless the team is cats.
+Life is short. Eat dessert first, then eat dessert second.
+The journey of a thousand miles begins with finding your shoes.
+You can do anything you set your mind to, except lick your elbow.
+Mistakes are proof you are trying. Lots of proof is fine.
+Leave every room better than you found it. Or at least leave it.
+Your only limit is your imagination, and also gravity.
+Be like a duck: calm on top, paddling wildly underneath.
+Opportunity knocks once. The pizza guy knocks twice.
+Smile, and the world smiles with you. Snore, and you sleep alone.
+Good things come to those who wait. Better things come to those who order early.
+Make today so awesome that yesterday gets jealous.
+Hustle until your socks match.
+Don't let anyone dull your sparkle. Except the dishwasher.
+Never put off until tomorrow what you can avoid entirely.
+Climb every mountain, but take the escalator when possible.
+Turn your can'ts into cans and your cans into lemonade stands.
+Do one thing every day that scares you, like checking your inbox.
+The secret to success is starting. The second secret is a snack.
+Wake up with determination. Go to bed with satisfaction. Nap in between.
+If you can dream it, you can probably draw it badly.
+Every day may not be good, but there's good toast in every day.
+You are stronger than you think, but please lift with your knees.
+Practice makes perfect. Nobody's perfect. So why practice? Just kidding, practice.
+Stars can't shine without darkness, or a power outlet.
+Work hard in silence. Let your snack crunching make the noise.
+Push yourself, because nobody else is going to push your shopping cart.
+Believe you can and you're halfway there. The other half is walking.
+Be a pineapple: stand tall, wear a crown, be sweet on the inside.
+Happiness is homemade, so stop ordering it online.
+Find what you love and let it ruin your sleep schedule.
+Never trust an atom. They make up everything.
+Do what you love, and you'll never have a clean kitchen again.
+The harder you work, the luckier your sandwich gets.
+Shine bright like a desk lamp.
+A goal without a plan is just a wish with snacks.
+The only way to do great work is to occasionally do no work.
+Small steps every day. Big steps only on stairs.
+Your vibe attracts your tribe. Your snacks attract your dog.
+Be fearless in pursuit of what sets your soul on fire. Keep an extinguisher handy.
+Strive for progress, not perfection, and definitely not paperwork.
+Wherever you go, go with all your heart, and a charger.
+Life isn't about waiting for the storm to pass. It's about finding an umbrella.
+The comeback is always stronger than the setback, especially in board games.
+Don't stop when you're tired. Stop when the cookies are done.
+Run your own race. Snacks at the finish line are optional but encouraged.
+Sometimes you win, sometimes you learn, sometimes you just lose the remote.
+Hold the vision, trust the process, and lose the receipt.
+Stay humble, work hard, and always check for spinach in your teeth.
+Collect moments, not things. Except stickers. Collect stickers.
+Make your bed. It's one less thing that judges you.
+Talent is a gift, but naps are a lifestyle.
+Live, laugh, lose your sunglasses on your head.
+You were born to be real, not to be perfect, and not to fold fitted sheets.
+Let your dreams be bigger than your fears and your snacks bigger than both.
+Be the reason someone checks their phone and smiles.
+Life's a climb, but the view has excellent parking.
+Every master was once a disaster with confidence.
+Don't wait for opportunity. Create it, then nap.
+Doubt kills more dreams than failure. Hunger kills more naps than both.
+Take the risk or lose the chance. Or bring both.
+Be strong enough to start and stubborn enough to finish the cereal.
+Inhale confidence, exhale doubt, avoid sneezing.
+You don't have to be great to start, but you do have to find your pen.
+The best view comes after the hardest climb, or a really tall elevator.
+Leap and the net will appear. Bring a net just in case.
+Never stop learning, especially which button mutes the microphone.
+Be so good they can't ignore you, then go take a nap.
+Dream big. Start small. Snack medium.
+If plan A fails, remember there are 25 more letters.
+`);
+
+addPack("Tiny mysteries", "weird", ["Tiny mystery", "Unsolved", "Case file", "Strange but true"], `
+Where do all the hair ties go?
+Who decided the alphabet goes in that order?
+Why does the other line always move faster?
+Somewhere, every missing sock is having a party.
+Nobody knows who first taught the kettle to scream.
+Why is there always one more stair in the dark?
+Every house has one drawer that holds the entire universe.
+The remote is never where you left it, even if you never left.
+Why does the fridge light know you're coming?
+Where does the lap go when you stand up?
+Who was the first person to look at a cow and think "milk"?
+Why do we park on driveways and drive on parkways?
+The spoon in the dishwasher is always the one you need.
+Why is the last puzzle piece always under the couch?
+Who teaches birds which way is south?
+Why are there holes in cheese, and who ordered them?
+Why does a song get stuck in your head only after it's over?
+Every pen you own has a secret plan to stop working.
+Where do flies go in winter, and why do they come back angry?
+Why do cats sit exactly on whatever you're reading?
+No one has ever seen a baby pigeon. Think about it.
+Why do we press harder on the remote when the battery is low?
+The sound of your name being called from another room is always mysterious.
+Somebody built the first ladder. How did they reach the top?
+Why does the lettuce in the fridge give up so quickly?
+Who named the pinky toe "this little piggy"?
+The clock in the oven and the clock on the microwave have never agreed.
+Why is "abbreviation" such a long word?
+How does the ice cream truck know exactly when you have no cash?
+Where did the first rubber band get its stretch?
+Why do clouds look solid until you're inside one?
+Every keyboard has one key that's mysteriously shiny.
+Why does the bath water go cold only at the best part of the book?
+Who left that one sock in the dryer for three years?
+Why do we say "after dark" when it's really "during dark"?
+Why does a watched pot never boil, but an unwatched one boils over?
+How did the cat get on top of the fridge?
+Where does the light go when you turn it off?
+The shopping cart always picks the wobbly wheel. Why?
+Why does every kitchen have a mysterious key that opens nothing?
+Who decided that pizza is cut into triangles but served in a square?
+Why do noses run but feet smell?
+The car keys were in your hand the whole time. How?
+Why is the snooze button so easy to find in the dark?
+Why does the cereal always run out right before the milk?
+Who decided a dozen should be twelve?
+Why does the wind only blow when you just fixed your hair?
+Who keeps moving the end of the tape roll?
+How does the dog know it's bath day?
+The trampoline in the backyard has seen things.
+Why does your foot fall asleep but your brain refuses?
+How does a single glitter speck end up everywhere?
+Why does every umbrella vanish on sunny days?
+Who was the first person to say "bless you" after a sneeze, and why?
+Why does a balloon always find the ceiling and never the floor?
+Why do grocery bags only rip at the front door?
+Where does all the lint come from? Nobody owns that much fluff.
+Why does the last cookie always look the best?
+Why does the elevator button feel faster when you press it twice?
+Who invented the knock-knock joke, and are they still knocking?
+Why do mirrors flip left and right but not up and down?
+How does a cat hear a can opener from three rooms away?
+Why are there 10 hot dogs in a pack but 8 buns?
+Who decided cheese should come in a can?
+Why does a mosquito wait until the lights are off?
+Every library has a book that nobody has opened in fifty years.
+Why do pianos have exactly 88 keys and not 89?
+Who gave the moon its face?
+Why is the "on" switch always in the darkest corner?
+How did the first person decide which mushroom was safe?
+Why do you only find what you were looking for after you buy a new one?
+Why does popcorn always leave one kernel unpopped?
+Who keeps adding leaves to the yard?
+Why is the opposite of "rewind" not "unwind"?
+Where did the other half of the friendship bracelet go?
+Why does the playground swing always sound like it's whispering?
+How does every family photo have one person mid-blink?
+Why does the doorbell ring the second you sit down?
+Why do towels get wetter when you dry yourself with them?
+Who put the "s" in "lisp"?
+Why do we say a building is "built" and not "builded"?
+Why does the forecast say 20% rain only on picnic days?
+Every attic has one box labeled "misc" and nobody knows what's inside.
+Why is it called a "pair" of pants when there's only one?
+How did the snowman get a carrot if nobody bought carrots?
+Why do the best ideas arrive at 3 a.m.?
+Why does the toaster dial go to 7 if nobody uses past 4?
+Why do pencils always break right before the test?
+Who taught the dog to look guilty?
+Why does the GPS lady always sound so calm?
+Why is there a button on the elevator that nobody ever presses?
+How does the cat know exactly which chair is yours?
+Why is the sound of rain so good for naps?
+Who stuck gum under the very first desk?
+Why do ducks always look like they know something?
+Where does the time go during a really good book?
+Why does a phone ring when you're in the shower?
+Why are there no B batteries?
+Why do we cook bacon but bake cookies?
+Who keeps changing the volume on the TV when no one is home?
+`);
+
+addPack("Animal conspiracies", "weird", ["Animal conspiracy", "Top secret", "Leaked memo", "Classified"], `
+Pigeons are taking notes on your lunch choices.
+Cats invented the internet just to be famous on it.
+Squirrels run a secret underground acorn bank.
+Ducks know where the bread comes from and they're not telling.
+Dogs pretend not to understand "bath" as a negotiating tactic.
+Owls aren't wise. They're just really good at staring.
+Goldfish remember everything. They just choose to forget you.
+Raccoons are a band of tiny bandits with a business plan.
+Every hamster wheel powers a secret hamster city.
+Crows have a group chat, and you're in it.
+Penguins only waddle when humans are watching.
+Geese are training for a hostile takeover of the park.
+Bees are building a honey empire, one flower at a time.
+Llamas spit to keep their secrets safe.
+Cows hold midnight meetings in the middle of the field.
+Seagulls are union members who never take breaks.
+Snails move slowly so you won't suspect anything.
+Frogs croak in code. Scientists are close to cracking it.
+Flamingos stand on one leg to save the other for emergencies.
+Parrots repeat things to spread rumors.
+Moles are secretly mapping the entire underground.
+Cats knock things off tables to test gravity for the government.
+Ants are just waiting for the right picnic to make their move.
+Octopuses have been running a secret ocean school.
+Sloths aren't slow. They're just on a different time zone.
+Hedgehogs roll into balls to avoid answering questions.
+Bunnies thump the ground to send messages to other bunnies.
+Dolphins laugh at sailors. They have their reasons.
+Giraffes know what's on top of the fridge and won't say.
+Every chicken crossing the road is on a mission.
+Fireflies are tiny lighthouses guiding moths home.
+Horses whisper to each other about the people who ride them.
+Butterflies have a strict dress code.
+The neighborhood cat has a second family two streets away.
+Woodpeckers are trying to send messages in Morse code.
+Sheep count humans to fall asleep.
+Turtles carry their houses so they never pay rent.
+Hummingbirds are powered by pure gossip.
+Ferrets are tiny thieves who steal socks for the sock cartel.
+Pandas pretend to be clumsy to get more bamboo.
+Mice built the cheese industry from the inside.
+Jellyfish float around eavesdropping on fish.
+Polar bears wear white because they're always at a formal event.
+Sharks have been practicing their scary music for years.
+Koalas hug trees to listen to tree gossip.
+Lobsters are planning a beach vacation for themselves.
+Hamsters stuff their cheeks to smuggle snacks across borders.
+Bats sleep upside down so they can see the world differently.
+Swans are elegant on the outside and plotting on the inside.
+Zebras are confused horses who joined a secret club.
+Monkeys run a banana stock market.
+Spiders write tiny messages in their webs. Look closer.
+Cats purr to hypnotize humans into opening cans.
+Owls rotate their heads to keep an eye on everyone at once.
+Kangaroos keep emergency snacks in their pouches.
+Dogs bark at mail carriers because they know what's in the envelopes.
+Starfish have been planning to regrow the world one arm at a time.
+Beavers are secretly the world's best engineers.
+Peacocks invented fashion shows.
+Moths go to lamps for important late-night meetings.
+Pigs are smarter than they let on, and they find you adorable.
+Crabs walk sideways to avoid making eye contact.
+Ladybugs are tiny spies in polka-dot uniforms.
+Ducks float because they know a secret about water.
+Cats sleep 16 hours a day to save energy for world domination.
+Pigeons bob their heads to music only they can hear.
+Every cuckoo clock is secretly run by a real cuckoo.
+Squirrels chase each other in spirals to confuse satellites.
+Hamsters nap all day because they work the night shift.
+Fish swim in schools but never do their homework.
+Ostriches don't hide their heads. They're checking for treasure.
+Parakeets are reporters for the bird news network.
+Walruses grew mustaches to look more trustworthy.
+Possums play dead because they're excellent actors.
+Owls are night guards who never call in sick.
+Chameleons change color to avoid being picked for chores.
+Goats climb cliffs just to look down on everyone.
+Badgers dig tunnels for the underground mail service.
+Every cat yawn is a coded signal to other cats.
+Dragonflies are tiny helicopters spying for the frogs.
+Rabbits invented hide-and-seek and never stopped playing.
+Seals clap to fool tourists into thinking they're nice.
+Herons stand still for hours because they're waiting for a sign.
+Moose have mastered the art of appearing suddenly.
+Hippos are secretly ballet dancers when nobody's watching.
+Cats stare at walls because the walls stare back.
+Turkeys hide during November for reasons they keep private.
+The dog wasn't asleep. It heard you open the cheese.
+Crickets chirp to keep time for the night orchestra.
+Pelicans keep extra fish in their beaks for rainy days.
+Gorillas beat their chests to send group texts.
+Bunnies wiggle their noses to check the Wi-Fi.
+Toucans have big beaks to carry their secrets.
+The family goldfish knows where the treats are kept.
+Hedgehogs secretly run the garden security service.
+Otters stack rocks in their pockets as savings accounts.
+Your cat knows your password and has opinions about it.
+Fish blow bubbles to send messages to the surface.
+Penguins slide on their bellies because walking is overrated and they know it.
+Somewhere, a group of ducks is planning your next surprise.
+`);
+
+addPack("Gamer jokes", null, ["Gamer moment", "Patch notes", "Achievement unlocked", "Respawning"], `
+Achievement unlocked: opened the fridge for no reason.
+Your snack has respawned in the kitchen.
+Loading screen tip: drink water.
+You have been defeated by the first enemy. Again.
+Patch notes: Monday has been nerfed.
+Side quest accepted: find the TV remote.
+Low battery detected. Please plug in a sandwich.
+The final boss was your sleep schedule all along.
+Game saved. Probably.
+New skill unlocked: opening a pickle jar.
+You leveled up in staying in bed.
+Press any key to continue. Not that one.
+Your inventory is full of rocks for some reason.
+The tutorial lasted three hours and taught you nothing.
+Lag spike: brain stopped working for a second.
+You've been AFK for 10 minutes. The cat took your seat.
+Speedrun record: fastest time to forget why you entered a room.
+Critical hit! You stubbed your toe.
+You found a rare item: a matching pair of socks.
+Daily login reward: one free nap.
+Your character has decided to stand in a corner.
+Respawn in 3, 2, 1… just kidding, it's Monday.
+Boss fight: folding the fitted sheet.
+You were one pixel away from greatness.
+The princess is in another castle. Again.
+Press X to doubt.
+Ultimate ability ready: making toast.
+Friendly fire: you laughed at your own joke.
+Your controller has 1% battery and 100% drama.
+Quest failed: the snacks were eaten by a teammate.
+Easter egg found inside an actual egg.
+You died from a tiny fall that shouldn't hurt.
+The game says "one more round." The game lies.
+Rage quit detected. Please take a deep breath.
+Your teammate is collecting flowers during the boss fight.
+Cutscene: you stare out the window dramatically.
+Unlocked a new map: the inside of the laundry basket.
+Character creation took longer than the whole game.
+Fast travel unavailable. Please walk to the kitchen.
+Health potion consumed: hot chocolate.
+You discover the real treasure was the snacks we ate along the way.
+Combo broken by a phone notification.
+New high score in falling asleep during a movie.
+Hint: try turning it off and on again.
+You have entered the dungeon of unanswered emails.
+Experience points earned for doing the dishes: zero.
+Stealth mission: sneaking a cookie at midnight.
+Your pet has joined the party.
+The NPC keeps repeating the same line. It's your alarm clock.
+Weapon equipped: a very fluffy pillow.
+Achievement unlocked: survived a group project.
+Your save file is 98% snacks.
+Hitbox issues: you missed the doorframe by a mile.
+Map marker set: the nearest bathroom.
+You've entered a safe zone. It's your blanket.
+Error 404: motivation not found.
+Your skill tree now includes "professional napper."
+The game has auto-saved your bad decision.
+Teammate disconnected. They went to eat dinner.
+Double XP weekend for chores. Nobody showed up.
+You unlocked the hidden ending: going to bed on time.
+Low-poly cat spotted in the background, staring.
+Boss enemy: the last piece of tape that won't come off the roll.
+Infinite loading circle. It was the toaster.
+You picked up a mysterious key. You will never find its door.
+The real final boss is the instruction manual.
+Dodge roll! You avoided the Lego on the floor.
+New mount unlocked: office chair with wheels.
+Your character has the hiccups. It's a feature.
+Server is down. Time to touch some grass.
+Combo: sneeze, trip, recover gracefully.
+Item crafted: a sandwich made from everything in the fridge.
+You found a secret room behind the bookshelf. It's dusty.
+Achievement: stared at the fridge three times in an hour.
+Your stamina bar is low. Please acquire nap.
+Final round: the last slice of pizza.
+Respawned at the last checkpoint: the couch.
+Victory royale in a game of hide and seek.
+Your avatar now wears pajamas permanently.
+Quest log: buy milk. Status: forgot milk again.
+Glitch detected: you said "you too" to the waiter.
+You collected all 100 coins. They were in the couch.
+Player two has entered the game. It's your little brother.
+Raid boss: Monday morning.
+The level is too hard. Have you tried snacks?
+Boss defeated! It was a spider in the bathtub.
+Training arc: learning to whistle.
+New patch: added more snacks, removed bedtime.
+Achievement: found the cold side of the pillow.
+Your character's special move is "pretending to be busy."
+You opened a loot box. It was a box.
+The secret level is just your messy room.
+Press start to begin your homework.
+Tiny victory dance unlocked.
+New record: longest time holding a door for someone.
+The game crashed because you looked at it funny.
+Your team has formed a conga line in the lobby.
+Pause menu activated: grabbing a snack.
+Final achievement: beat the game, forgot the story.
+Game over? Never. Insert another snack.
+`);
+
+addPack("Dramatic anime lines", null, ["Dramatic moment", "Episode 12", "Plot twist", "Final arc"], `
+This isn't even my final form… of breakfast.
+I've trained my whole life for this moment: the last cookie.
+You underestimated me. Big mistake. I have snacks.
+The wind… it's telling me to take a nap.
+I won't give up! Not until I find the TV remote!
+So this is the power of friendship… and pizza.
+Behind me, the dishes explode dramatically. I don't look back.
+My homework… it was never meant to be finished.
+Is this… the legendary matching sock?
+Rival! We meet again at the snack aisle!
+I can feel my power level rising. It's the coffee.
+You think you've won? I still have one more life!
+The prophecy spoke of one who would finally clean their room.
+Sensei, I'm ready. Please teach me to tie my shoes.
+Even if the whole world turns against me, I'll still love cheese.
+It's not over until the credits roll and the snacks run out.
+My bonds with my friends… are stronger than the Wi-Fi.
+I made a promise under the cherry trees: never skip breakfast.
+Everything I did… was for that last slice of cake.
+The rain hides my tears. They're about the spilled cereal.
+He stood alone on the hill, wind in his hair, holding a sandwich.
+You'll never understand the burden of being the group's snack holder.
+I'll protect this pudding cup with my life!
+Our hearts are connected… by a really long phone charger.
+The storm is coming… and I forgot my umbrella.
+Activate: ultimate homework technique!
+Hmph. It's not like I wanted you to share your fries or anything.
+Today I fight not for glory, but for the comfy chair.
+The ancient scroll reveals… a grocery list.
+Wait… you were the cat the whole time?!
+I'll surpass you one day. Especially at hopscotch.
+Believe in yourself! I already believe in your snacks!
+The sakura petals fall… right into my soup.
+My eye twitches. Someone took the last marker.
+This bento… holds the hopes of an entire family.
+A true hero never leaves a friend behind at the vending machine.
+Impossible! He dodged the pillow!
+In this world, only the strong get the window seat.
+Let's go! Full power! Into the dishwasher!
+Do you hear that? It's the sound of my destiny… or the kettle.
+The moonlight reveals my secret: I can't whistle.
+You've awakened something inside me. It's hunger.
+Countless battles have led me here, to the checkout line.
+Our team never loses! Except at board games.
+I'll show you the true meaning of a nap!
+Defeat is just a word. A word I hear often.
+Hold on… my bag is glowing. Oh, it's my phone.
+I sense an incredible energy coming from the kitchen.
+The final battle… begins after lunch.
+Even with my last breath… I'll finish this ice cream.
+Through tears and laughter, we made it to Friday.
+Stand back! This is a two-handed burrito!
+Why does every training arc involve carrying rocks?
+You fool! You fell for my clever trap: free cookies!
+Don't make me use my secret technique: asking nicely.
+My blanket cape flutters in the heroic breeze of the fan.
+The legend says whoever pulls this sword gets to pick the movie.
+I won't lose… not to a jar lid!
+We have one shot. One chance. One slice of pizza.
+I've been waiting a thousand years for this. Or ten minutes. It felt long.
+Brace yourself! My little brother has entered the room!
+The power of a thousand suns… is in this spicy noodle.
+This is the end… of the season. See you next week!
+A single leaf falls. Everyone gasps. It was just a leaf.
+My rival has stolen my seat. This means war.
+I declare… I am going to be the best at napping!
+Those eyes… they've seen too many reruns.
+I'll get stronger! Starting tomorrow! For real this time!
+And so, our hero walked into the sunset… to buy milk.
+Don't cry, little dumpling. I'll eat you with honor.
+The clock strikes midnight. My homework is due. I have a plan.
+Behold! My ultimate creation: a perfectly built sandwich!
+I cannot be stopped! Except by a closed door.
+The school bell rings. Our true battle begins: the lunch line.
+This feeling… is it love? No, it's heartburn.
+He whispered "nothing personal" and took the last dumpling.
+Every step I take is for the people who believed in me. And for snacks.
+It was destiny that brought us together. Also a group project.
+I'll see you again, beloved pencil. In the next life.
+Sparks fly! The two ramen bowls clash!
+Victory tastes sweet. It tastes like victory pudding.
+I refuse to accept a world without second breakfast.
+Look at the sky, friend. Those are our dreams. Also some birds.
+Gather around, everyone! The dramatic flashback is starting!
+My heart races. The microwave says 3 seconds left.
+You've grown so strong. You can open the cereal box yourself now.
+Silence. Then, from the shadows, a single sneeze.
+I'll never forgive you… for spoiling the ending.
+This hand of mine glows with a burning desire to high-five you!
+I am the storm. Also, I am slightly cold.
+This battle will be decided in one move: rock, paper, or scissors.
+The ancient dragon awakens… and asks for a glass of water.
+Until we meet again, my friend. Same time tomorrow?
+I don't need luck. I have a good playlist.
+I was born for this moment. Also for naps.
+The tournament of snacks… begins now!
+We've walked so far together. Let's take the bus back.
+My spirit is unbreakable. My phone screen, less so.
+Even if I fall a hundred times, I'll still be the snack captain.
+To be continued… after this word from our snacks.
+`);
+
+addPack("Cute and wholesome", "cute", ["Wholesome", "Friendly reminder", "Soft news", "Good vibes"], `
+A puppy somewhere just learned its name.
+You're somebody's favorite notification.
+A baby duck just took its first swim and nailed it.
+The sun came up today just to see you.
+Somewhere, a kitten is purring because it feels safe.
+You make ordinary days feel like holidays.
+A grandma is knitting a sweater with extra love in it.
+A grandma just learned to send emojis and is using all of them.
+Your laugh is someone's favorite song.
+A tiny bird is singing its very best song for you.
+Somebody kept the last cookie for you.
+You deserve a warm blanket and a good book.
+A bunny is having the best nap of its life.
+Your friends are lucky to have you.
+A puppy just got its very first toy.
+The stars are proud of how far you've come.
+A hug is on its way to you. Brace yourself.
+Somewhere, someone is telling a story about how kind you are.
+A baby elephant is splashing in a puddle, very happy.
+You're doing better than you think.
+A sleepy cat just chose your lap.
+Fresh cookies are cooling on a windowsill somewhere.
+A small dog is wagging so hard its whole body wiggles.
+A kid just laughed so hard they snorted, and everyone joined in.
+The moon wanted to say goodnight to you personally.
+A little seed just sprouted its very first leaf.
+Somebody warmed up your side of the blanket.
+A hamster is stuffing its cheeks with joy.
+Your kindness travels farther than you know.
+A penguin just gave its friend a pebble as a gift.
+Today is a great day to be gentle with yourself.
+A grandpa is teaching a kid how to fish, very patiently.
+You have a heart like a warm cup of cocoa.
+A fluffy cloud is following you to keep you company.
+Two old friends just met again after years. They hugged.
+Somewhere, a dog is waiting by the door for its favorite person.
+You're allowed to rest. The world will wait.
+A little kid just drew a picture of their best friend. It's a potato.
+A sunflower turned to face you.
+Your smile could power a small town.
+A baby goat just did a tiny jump for joy.
+Someone is wearing the scarf you made them.
+The rain is watering a garden that will feed someone.
+A kitten just discovered its own tail and is delighted.
+You make the world softer just by being in it.
+Somebody is proud of you right now.
+A tiny frog is sitting on a lily pad, feeling fancy.
+Hot cocoa season is always a little closer than you think.
+Your pet thinks you're the best person in the universe.
+The world is better with you in it.
+A teacher just told a student "I believe in you."
+A puppy is asleep with its paws in the air.
+You're a really good friend. Like, the best.
+A neighbor just watered someone else's plants.
+Little moments add up to a lovely life.
+A ladybug landed on a kid's finger and they made a wish.
+You're glowing today. Yes, you.
+A baby panda just rolled down a hill on purpose.
+Your future self is going to thank you.
+A cat and a dog are sharing a bed and pretending not to.
+Someone is humming the song you showed them.
+You're as warm as a sock fresh out of the dryer.
+A duckling is following its mom in a perfect little line.
+You are worth every good thing coming your way.
+Somewhere, a bakery smells amazing just for you.
+A tiny hedgehog is getting a gentle bath and loving it.
+The flowers bloomed a little brighter today.
+Your hugs are the best kind of hugs.
+A little brother just shared his candy without being asked.
+The night sky is putting on a show just for you.
+A squirrel found the perfect acorn and did a happy dance.
+It's okay to take things one tap at a time.
+A cozy blanket is waiting for you at home.
+You're a whole box of sunshine.
+A shelter dog just went home with a new family.
+Somebody wrote your name in their gratitude journal.
+A tiny turtle made it all the way to the sea.
+You make other people feel brave.
+A puppy just met snow for the first time and loves it.
+Your heart is the good kind of big.
+A best friend is saving a seat for you.
+Clouds are just sky pillows for tired birds.
+You make the group chat better.
+A grandma just won her very first video game.
+Every flower you pass is quietly cheering for you.
+A kitten just fell asleep mid-yawn.
+You're the human version of a warm cookie.
+A baby otter is floating on its mom's tummy, perfectly safe.
+Someone kept a note you wrote them years ago.
+Your plants grow better because you talk to them.
+A dog just carried a stick twice its size, very proudly.
+You're someone's reason to look forward to tomorrow.
+A sleepy bear just found the perfect cave for winter.
+Little kindnesses are the biggest kind of magic.
+A koala is hugging its favorite tree extra tight today.
+You are allowed to be proud of small wins.
+A child just gave their parent a dandelion bouquet.
+Your voice makes someone feel at home.
+A tiny bird built its very first nest today.
+You're doing great, sweet pea.
+`);
+
+addPack("More cute and wholesome", "cute", ["Wholesome", "Gentle reminder", "Heartwarming", "Cozy news"], `
+A cat just slow-blinked at you. That means it loves you.
+The coziest sweater in the world is waiting for winter with you.
+A little girl just named her goldfish after you.
+Somewhere, a dog is dreaming about you and wagging in its sleep.
+Every raindrop is a tiny high-five from the sky.
+You light up rooms like a string of fairy lights.
+A baby sloth just gave the slowest, sweetest hug.
+Your friends talk about you with big smiles.
+The bakery saved you the one with extra sprinkles.
+A family of ducks is crossing the road and traffic is waiting patiently.
+You deserve pancakes and a lazy morning.
+A kid just shared their umbrella with a stranger.
+Someone's day got better because you said hello.
+A puppy and a kitten are napping in a single sunbeam.
+You're the cozy kind of person.
+A lighthouse is shining to make sure every boat gets home.
+The cat on the windowsill is guarding your house with love.
+A tiny mouse just found a whole cracker and can't believe its luck.
+You are someone's safe place.
+A gentle breeze is carrying good thoughts your way.
+The kettle is singing because it's tea time with a friend.
+A bunny just flopped over in complete happiness.
+Your kindness is contagious in the best way.
+A grandpa is reading a bedtime story with all the voices.
+Every hug you give makes the world a bit warmer.
+A fox just curled its fluffy tail around itself like a blanket.
+You're a five-star friend.
+A snowman somewhere is wearing a scarf that says "you're loved."
+The stars blinked twice, which means they like you.
+A little puppy just learned to climb the stairs.
+Your heart has room for so many good things.
+Someone is wearing a sweater you once complimented, feeling great.
+A family just planted a tree for their new baby.
+You make even rainy days feel cozy.
+A small cat just made biscuits on a fluffy blanket.
+The best is yet to come, and it's bringing snacks.
+A lamb just bounced around a meadow for no reason at all.
+You're a gentle soul in a busy world.
+A firefly lit up just as you looked outside.
+Your favorite person is thinking about you.
+A dog is sitting on its owner's feet to keep them warm.
+Somebody's whole week got better because of your joke.
+A tiny bird is sharing a seed with its friend.
+You are loved more than you know.
+The moon is softly glowing over everyone you care about.
+A toddler just said "thank you" without being reminded.
+A tiny snail is resting in the shade of a big mushroom.
+A sea turtle just waved a flipper. Probably at you.
+You're a cup of tea in human form.
+Somewhere, a kitten is chasing a sunbeam across the floor.
+You make people feel heard.
+A baby bear just discovered honey and is very excited.
+The library has a book that's waiting just for you.
+A dog just tilted its head because you said its name.
+You're the sprinkles on the cupcake of life.
+A mother bird is tucking her babies in for the night.
+Someone is laughing right now at a joke you told last year.
+A fluffy chick just peeped its very first peep.
+Your presence is a present.
+A big dog is letting a tiny kitten sleep on its back.
+You make every day a little more magical.
+A neighbor just left fresh flowers on someone's doorstep.
+The world needs your kind of kindness.
+A sleepy owl just tucked its head under its wing.
+You are enough, exactly as you are.
+A little boy just helped an old man carry groceries.
+Your cat secretly thinks you're a very big, very good cat.
+A rainbow showed up just after the storm, right on time.
+You make ordinary things sparkle.
+A puppy just sneezed and surprised itself. Adorable.
+Every day you grow a little more awesome.
+A baby giraffe just took its first wobbly steps.
+You have the best kind of laugh: the contagious kind.
+A grandma is baking cookies for the whole street.
+The ocean waves are whispering "you've got this."
+A kitten is wearing a tiny bow and feeling very fancy.
+Someone wants to hear about your day.
+A dog is happily carrying the newspaper home.
+You're a walking warm hug.
+Two strangers just laughed at the same thing and became friends.
+A family of hedgehogs just went for an evening stroll.
+Your dreams are worth chasing, and you're fast.
+A tiny duck just discovered its own reflection and said hi.
+You're the reason the group photo looks so happy.
+A child just built a sandcastle and named it after their dog.
+The sun is setting in your favorite color tonight.
+A puppy is learning to fetch and bringing back everything except the ball.
+You are a wonderful surprise to the people who meet you.
+A cat is purring so loudly the whole couch vibrates.
+Someone is grateful you exist.
+A small kindness from you will echo for a long time.
+A baby penguin is waddling bravely toward its first swim.
+Your energy makes the room brighter.
+A friend is about to text you something nice.
+A gentle snow is falling and everything is quiet and cozy.
+You make the world feel a little more like home.
+A tiny kitten just conquered the big scary sock.
+Every day you're here is a good day for the world.
+Sweet dreams are already on their way to you tonight.
+An old teacher still remembers how kind you were.
+`);
+
+/* @@packs-end */
+/* Build the full list (classic + packs), drop exact duplicates. */
+const ALL_SENTENCES = (() => {
+  const out = [], seen = new Set();
+  const push = (text, tag, labels) => {
+    const k = text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if (!text || seen.has(k)) return;
+    seen.add(k);
+    out.push({ text, tag, labels });
+  };
+  sentences.forEach((s, i) => push(s, CLASSIC_CUTE.has(i) ? "cute" : CLASSIC_WEIRD.has(i) ? "weird" : null, null));
+  PACKS.forEach(p => p.lines.forEach(l => push(l, p.tag, p.labels)));
+  return out;
+})();
+
+/* Shuffle-bag: every sentence is shown once before any repeats.
+   The bag is saved, so it carries across visits. */
+function drawSentence() {
+  const n = ALL_SENTENCES.length;
+  if (!Array.isArray(state.bag) || state.bagSize !== n || state.bag.some(i => i >= n)) {
+    state.bag = shuffled(n, state.recent || []);
+    state.bagSize = n;
+  }
+  if (!state.bag.length) state.bag = shuffled(n, state.recent || []);
+  const i = state.bag.pop();
+  state.recent = [i, ...(state.recent || [])].slice(0, 30);
+  last.s = i;
+  const s = ALL_SENTENCES[i];
+  const label = s.labels ? s.labels[Math.floor(rand() * s.labels.length)] : pick(eyebrows, "b");
+  return { i, text: s.text, tag: s.tag, label };
+}
+function shuffled(n, avoidLast) {
+  const a = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  // the bag is drawn from the end, so push recently seen ones to the front (drawn last)
+  const avoid = new Set(avoidLast);
+  return [...a.filter(i => avoid.has(i)), ...a.filter(i => !avoid.has(i))];
+}
+const emojis = ["🦄","🥞","🧦","🐧","🐱","💃","🐉","🍌","☁️","🐿️","🍕","🐠","🪴","🌊","🤖","🍿","🐸","⭐","🦙","😴","😊","🦆","🧁","🎶","🎹","🐙","🌈","🐌","🚀","🐻","🥪","🍅","☄️","🎉","🍩","🦖","🌻","🎈","🍉","🦋","🌮","🪐","🐳","🦔","🧙","🥔","🍄","🦩"];
+const colors = ["#ff5d73","#ff8a3d","#f5c518","#3ccf91","#21b6c9","#4d7cff","#8b5cf6","#e94fc2","#1fa35c","#ff4f9a","#00a3a3","#6c4cff","#ff6b35","#2d9cdb","#c2410c","#a3d930"];
+const eyebrows = ["Fact of the moment","Breaking news","Totally true","Fun fact","Top secret","Just in","Science says","A little bird told me","Official announcement","Did you know?"];
+const buttonLabels = ["Tap me!","Again!","One more","Hit me","More please","Keep going","Surprise me"];
+
+/* Rare finds, rarest first. odds = "1 in N" per tap. */
+const RARES = [
+  { id: "singularity", odds: 1e9, emoji: "🌌", color: "#b48bff",
+    title: "The Singularity",
+    greet: "Greetings, Chosen One of a Billion.",
+    line: "You found the edge of the universe. It was hiding behind this button the whole time.",
+    award: "Keeper of the Cosmos",
+    claim: "Name your star",
+    fx: { mode: "twinkle", chars: ["✦", "✧", "·", "✨"], n: 60, size: [8, 22] } },
+  { id: "diamond", odds: 1e6, emoji: "💎", color: "#3fb8e0",
+    title: "The Millionth Diamond",
+    greet: "Well met, Millionth Wanderer.",
+    line: "A million taps of pressure made one perfect diamond, and it formed in your hands.",
+    award: "Diamond Hands",
+    claim: "Polish your diamond",
+    fx: { mode: "fall", chars: ["💠", "✦", "✧"], n: 30, size: [12, 26] } },
+  { id: "egg", odds: 1e5, emoji: "🥚", color: "#1fa37a",
+    title: "The Dragon Egg",
+    greet: "Hail, Egg Guardian!",
+    line: "A dragon egg, still warm. Out of a hundred thousand taps, it chose yours.",
+    award: "Dragon Keeper",
+    claim: "Warm the egg",
+    fx: { mode: "rise", chars: ["✨", "🔮", "✦"], n: 30, size: [12, 28] } },
+  { id: "phoenix", odds: 1e4, emoji: "🔥", color: "#f0561f",
+    title: "Phoenix Flame",
+    greet: "Rise, Flame-Bearer!",
+    line: "A phoenix sheds one spark every ten thousand years. It just landed on you.",
+    award: "Flame-Bearer",
+    claim: "Carry the flame",
+    fx: { mode: "rise", chars: ["🔥", "✨", "•"], n: 34, size: [10, 30] } },
+  { id: "clover", odds: 1e3, emoji: "🍀", color: "#2f9a3f",
+    title: "Four-Leaf Clover",
+    greet: "Top of the mornin' to ya, lucky one!",
+    line: "You found a four-leaf clover. Luck owes you a favor now.",
+    award: "Lucky Charm",
+    claim: "Pick a leaf",
+    fx: { mode: "fall", chars: ["🍀", "☘️", "🌼"], n: 28, size: [16, 32] } },
+  { id: "star", odds: 1e2, emoji: "🌠", color: "#8a6bff",
+    title: "Shooting Star",
+    greet: "Make a wish, Stargazer!",
+    line: "A shooting star changed course just to wave at you.",
+    award: "Wish Maker",
+    claim: "Make a wish",
+    fx: { mode: "streak", chars: ["⭐", "✨", "🌟"], n: 16, size: [14, 28] } }
+];
+
+const $ = id => document.getElementById(id);
+const root = document.documentElement;
+const last = { s: 0, e: 0, c: 0, b: 0, l: 0 };
+const trail = [];
+const STORE = "tap-sentence-v1";
+
+/* ---- saved progress (per browser) ---- */
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORE)) || { taps: 0, awards: {} }; }
+  catch (_) { return { taps: 0, awards: {} }; }
+}
+function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (_) {} }
+const state = load();
+state.awards = state.awards || {};
+state.taps = state.taps || 0;
+state.ach = state.ach || {};                       // tap + streak achievements: id -> ISO date
+state.streak = state.streak || { count: 0, last: "", best: 0 };
+state.theme = state.theme || "default";
+state.muted = !!state.muted;
+state.skipRepeats = !!state.skipRepeats;
+state.dry = state.dry || 0;                        // taps since the last rare find
+state.witch = state.witch || { met: false, lvl: 0 };
+if (state.hintDone === undefined) state.hintDone = state.taps > 0;   // only brand-new players see the hint
+
+/* ---- randomness: 53-bit uniform number from the crypto generator ---- */
+function rand() {
+  try {
+    const a = new Uint32Array(2);
+    crypto.getRandomValues(a);
+    return (a[0] * 2097152 + (a[1] >>> 11)) / 9007199254740992;
+  } catch (_) { return Math.random(); }
+}
+function rollRare() {
+  const r = rand();
+  let edge = 0;
+  for (const t of RARES) {
+    edge += 1 / t.odds;
+    if (r < edge) return t;
+  }
+  return null;
+}
+
+function pick(list, key) {
+  let i;
+  do { i = Math.floor(rand() * list.length); } while (list.length > 1 && i === last[key]);
+  last[key] = i;
+  return list[i];
+}
+function textOn(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255].map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; });
+  return (.2126 * r + .7152 * g + .0722 * b) > .3 ? "#1a1726" : "#ffffff";
+}
+function restart(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+const fmtOdds = n => "1 in " + n.toLocaleString("en-US");
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const nowDate = () => new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+const nowTime = () => new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+
+/* ---- the interactive moment for each rare find ----
+   run(stage, done): draws the UI into the stage; done(update, html) saves and shows the result.
+   summary(extra): one line for the award library. */
+const STEPS = {
+  singularity: {
+    run(stage, done) {
+      stage.innerHTML = `
+        <label class="slabel" for="starName">Name your star</label>
+        <input class="field" id="starName" maxlength="24" autocomplete="off" placeholder="Your name">
+        <p class="shint" id="starHint">It will shine at the edge of the universe forever.</p>
+        <button class="claim" type="button" id="lightStar">Light it up ✦</button>`;
+      const input = $("starName");
+      input.focus();
+      const go = () => {
+        const name = input.value.trim().replace(/\s+/g, " ");
+        if (!name) { $("starHint").textContent = "Type a name first, then light it up."; input.focus(); return; }
+        const ra = `${Math.floor(rand() * 24)}h ${String(Math.floor(rand() * 60)).padStart(2, "0")}m`;
+        const dec = `${rand() < .5 ? "−" : "+"}${Math.floor(rand() * 90)}°`;
+        const tag = document.createElement("span");
+        tag.className = "named";
+        tag.textContent = "✦ " + name;
+        $("fx").appendChild(tag);
+        done(x => { x.starName = name; x.coords = `RA ${ra}, Dec ${dec}`; },
+          `<p class="cert-kicker">Keeper of the Cosmos · Star registry</p>
+           <p class="cert-big">★ ${esc(name)}</p>
+           <p class="cert-small">Now shining at RA ${ra}, Dec ${dec}. One of one.</p>`);
+      };
+      $("lightStar").onclick = go;
+      input.onkeydown = e => { if (e.key === "Enter") go(); };
+    },
+    summary: x => x.starName ? `Star “${esc(x.starName)}” · ${esc(x.coords)}` : ""
+  },
+
+  diamond: {
+    run(stage, done) {
+      stage.innerHTML = `
+        <button class="gem" id="gem" type="button" aria-label="Polish the diamond">💎</button>
+        <p class="shint" id="gemHint" aria-live="polite">Tap the diamond to polish it · 0/5</p>`;
+      const gem = $("gem");
+      let n = 0;
+      gem.focus();
+      gem.onclick = () => {
+        n++;
+        gem.style.setProperty("--shine", n / 5);
+        $("gemHint").textContent = n < 5 ? `Keep polishing · ${n}/5` : "Perfect.";
+        if (n < 5) return;
+        gem.onclick = null;
+        const carat = (0.5 + rand() * 9.5).toFixed(2);
+        const clarity = ["Flawless", "Internally Flawless", "VVS1", "VVS2"][Math.floor(rand() * 4)];
+        const colorGrade = ["D", "E", "F"][Math.floor(rand() * 3)];
+        const serial = "No. " + String(Math.floor(rand() * 1e6)).padStart(6, "0");
+        setTimeout(() => done(x => { x.carat = carat; x.clarity = clarity; x.grade = colorGrade; x.serial = serial; },
+          `<p class="cert-kicker">Diamond Hands · Certificate ${serial}</p>
+           <p class="cert-big">${carat} carats</p>
+           <p class="cert-small">Clarity ${clarity} · Color ${colorGrade} · Polished ${nowDate()}</p>`), 450);
+      };
+    },
+    summary: x => x.carat ? `${x.carat} ct · ${x.clarity} · Color ${x.grade} · ${x.serial}` : ""
+  },
+
+  egg: {
+    run(stage, done) {
+      stage.innerHTML = `
+        <button class="egg-btn" id="eggBtn" type="button" aria-label="Warm the dragon egg">🥚</button>
+        <p class="shint" id="eggHint" aria-live="polite">Tap the egg to keep it warm · 0/7</p>`;
+      const egg = $("eggBtn");
+      let n = 0;
+      egg.focus();
+      egg.onclick = () => {
+        n++;
+        egg.style.setProperty("--warm", n / 7);
+        restart(egg, "shake");
+        $("eggHint").textContent = n < 4 ? `It's getting warmer · ${n}/7` : n < 7 ? `Something is moving inside! · ${n}/7` : "It's hatching!";
+        if (n < 7) return;
+        egg.onclick = null;
+        const names = ["Ember", "Pebble", "Mochi", "Zephyr", "Biscuit", "Nova", "Sprout", "Comet", "Pickle", "Juniper", "Sparky", "Waffles"];
+        const elements = [["Ember", "🔥"], ["Frost", "❄️"], ["Bloom", "🌸"], ["Storm", "⚡"], ["Star", "⭐"], ["Tide", "🌊"]];
+        const name = names[Math.floor(rand() * names.length)];
+        const [element, icon] = elements[Math.floor(rand() * elements.length)];
+        setTimeout(() => { egg.textContent = "🐉"; restart(egg, "shake"); }, 350);
+        setTimeout(() => done(x => { x.dragon = name; x.element = element; x.hatched = new Date().toISOString(); },
+          `<p class="cert-kicker">Dragon Keeper · Hatchling papers</p>
+           <p class="cert-big">🐉 ${name}</p>
+           <p class="cert-small">${icon} ${element} dragon · Hatched ${nowDate()} at ${nowTime()}</p>`), 1100);
+      };
+    },
+    summary: x => x.dragon ? `${esc(x.dragon)}, a ${esc(String(x.element).toLowerCase())} dragon` : ""
+  },
+
+  phoenix: {
+    run(stage, done) {
+      stage.innerHTML = `
+        <button class="hold" id="hold" type="button"><span class="fill" id="fill"></span><span class="hl" id="holdLabel">Hold to ignite</span></button>
+        <p class="shint" id="holdHint">Press and hold until the flame catches.</p>`;
+      const btn = $("hold"), fill = $("fill");
+      let p = 0, timer = null, lit = false;
+      const start = () => {
+        if (timer || lit) return;
+        $("holdLabel").textContent = "Keep holding…";
+        timer = setInterval(() => {
+          p += 4;
+          fill.style.width = Math.min(p, 100) + "%";
+          if (p >= 100) finish();
+        }, 100);
+      };
+      const stop = () => {
+        if (lit) return;
+        clearInterval(timer); timer = null;
+        if (p > 0) $("holdHint").textContent = "The spark faded. Hold a little longer.";
+        p = 0; fill.style.width = "0%";
+        $("holdLabel").textContent = "Hold to ignite";
+      };
+      const finish = () => {
+        lit = true; clearInterval(timer); timer = null;
+        done(x => { x.lit = x.lit || new Date().toISOString(); x.rekindled = (x.rekindled || 0) + 1; },
+          `<p class="cert-kicker">Flame-Bearer · Phoenix Flame</p>
+           <p class="cert-big">🔥 Your flame is lit</p>
+           <p class="cert-small">Lit ${nowDate()} at ${nowTime()}. It will burn for 10,000 years.</p>`);
+      };
+      btn.focus();
+      btn.addEventListener("pointerdown", e => { e.preventDefault(); start(); });
+      ["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, stop));
+      btn.addEventListener("contextmenu", e => e.preventDefault());
+      btn.addEventListener("keydown", e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); start(); } });
+      btn.addEventListener("keyup", e => { if (e.key === " " || e.key === "Enter") stop(); });
+    },
+    summary: x => x.lit ? `Flame lit ${new Date(x.lit).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}${x.rekindled > 1 ? ` · rekindled ×${x.rekindled}` : ""}` : ""
+  },
+
+  clover: {
+    run(stage, done) {
+      const leaves = [
+        ["Hope", "🌱", "Something you're waiting for is closer than you think."],
+        ["Faith", "🕊️", "Trust your next step. It's the right one."],
+        ["Love", "💚", "Someone is thinking of you kindly today."],
+        ["Luck", "✨", "Say yes to the next small adventure."]
+      ];
+      const colorsLucky = [["Mint", "#3ccf91"], ["Sunflower", "#f5c518"], ["Coral", "#ff6b6b"], ["Sky", "#4fb3ff"], ["Lilac", "#b48bff"], ["Peach", "#ffb38a"], ["Emerald", "#1fa35c"]];
+      stage.innerHTML = `
+        <p class="slabel">Each leaf holds a different fortune</p>
+        <div class="leaves">${leaves.map((l, i) => `<button class="leaf" type="button" data-i="${i}"><span aria-hidden="true">${l[1]}</span>${l[0]}</button>`).join("")}</div>`;
+      stage.querySelector(".leaf").focus();
+      stage.querySelectorAll(".leaf").forEach(b => b.onclick = () => {
+        const [leaf, icon, fortune] = leaves[+b.dataset.i];
+        const num = 1 + Math.floor(rand() * 99);
+        const [cname, chex] = colorsLucky[Math.floor(rand() * colorsLucky.length)];
+        done(x => { x.leaf = leaf; x.number = num; x.color = cname; },
+          `<p class="cert-kicker">Lucky Charm · Leaf of ${leaf} ${icon}</p>
+           <p class="cert-big">${fortune}</p>
+           <p class="cert-small">Lucky number ${num} · Lucky color <span class="swatch" style="background:${chex}"></span> ${cname}</p>`);
+      });
+    },
+    summary: x => x.leaf ? `Leaf of ${x.leaf} · lucky number ${x.number} · ${x.color}` : ""
+  },
+
+  star: {
+    run(stage, done) {
+      stage.innerHTML = `
+        <label class="slabel" for="wishText">Write your wish</label>
+        <textarea class="field" id="wishText" rows="3" maxlength="140">I wish </textarea>
+        <p class="shint" id="wishHint">The star can carry up to 140 characters.</p>
+        <button class="claim" type="button" id="sendWish">Send it to the stars ✨</button>`;
+      const ta = $("wishText");
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+      $("sendWish").onclick = () => {
+        const wish = ta.value.trim().replace(/\s+/g, " ");
+        if (wish.replace(/^i wish\b/i, "").trim().length < 2) {
+          $("wishHint").textContent = "Finish the sentence first. What do you wish for?";
+          ta.focus();
+          return;
+        }
+        stage.classList.add("launch");
+        setTimeout(() => done(x => { x.wishes = [{ text: wish, at: new Date().toISOString() }, ...(x.wishes || [])].slice(0, 20); },
+          `<p class="cert-kicker">Wish Maker · Shooting Star</p>
+           <p class="cert-big">“${esc(wish)}”</p>
+           <p class="cert-small">Sent ${nowDate()} at ${nowTime()}. The star has it now.</p>`), reduced() ? 0 : 700);
+      };
+    },
+    summary: x => (x.wishes || []).map(w => `“${esc(w.text)}”`).join("<br>")
+  }
+};
+
+function burst(emoji) {
+  if (reduced()) return;
+  const r = $("tap").getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  for (let i = 0; i < 10; i++) {
+    const s = document.createElement("span");
+    s.className = "bit";
+    s.textContent = i % 3 === 0 ? skinSpark() : emoji;
+    const ang = rand() * Math.PI * 2, dist = 70 + rand() * 90;
+    s.style.left = cx - 11 + "px";
+    s.style.top = cy - 11 + "px";
+    s.style.setProperty("--dx", Math.cos(ang) * dist + "px");
+    s.style.setProperty("--dy", Math.sin(ang) * dist - 40 + "px");
+    s.style.setProperty("--rot", (rand() * 360 - 180) + "deg");
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 950);
+  }
+}
+
+function setMood(color) {
+  root.style.setProperty("--mood", color);
+  root.style.setProperty("--mood-fg", textOn(color));
+}
+function show(emoji, sentence, eyebrow, rare) {
+  $("sentence").textContent = sentence;
+  $("emoji").textContent = emoji;
+  $("eyebrow").textContent = eyebrow;
+  $("eyebrow").classList.toggle("rare", !!rare);
+  restart($("emoji"), "pop");
+  restart($("sentence"), "rise");
+  burst(emoji);
+  trail.unshift(emoji);
+  if (trail.length > 7) trail.pop();
+  $("trail").innerHTML = trail.map(e => `<span>${e}</span>`).join("");
+  $("copy").textContent = "Copy";
+}
+
+function next() {
+  state.taps++;
+  $("count").textContent = state.taps === 1 ? "1 tap" : state.taps.toLocaleString("en-US") + " taps";
+  if (state.taps % 5 === 0) $("tap").textContent = pick(buttonLabels, "l");
+
+  lastTapAt = Date.now();
+  idleNagged = false;
+  if (state.streak.last !== dayKey()) { updateStreak(); checkStreakAch(false); }
+
+  const rare = rollRare();
+  if (rare) {
+    const label = "✦ Rare find · " + fmtOdds(rare.odds) + " ✦";
+    setMood(rare.color);
+    show(rare.emoji, rare.line, label, true);
+    const owned = !!state.awards[rare.id];
+    grant(rare);
+    result = { emoji: rare.emoji, sentence: rare.line, label, rare, color: rare.color };
+    const wasBored = state.dry >= BORED_AFTER;
+    state.dry = 0;
+    playRare(rare.id);
+    vibrateFor(rare.id);
+    if (owned && state.skipRepeats) {
+      toast(rare.emoji, "Found again", rare.title + " ×" + state.awards[rare.id].count, "Celebration skipped. You can turn this off in the award library.");
+      witchOnRare(rare, wasBored);
+    } else {
+      pendingWitch = () => witchOnRare(rare, wasBored);
+      celebrate(rare);
+    }
+  } else {
+    const color = pick(colors, "c");
+    const emoji = pick(emojis, "e");
+    const drawn = drawSentence();
+    const sentence = drawn.text;
+    const label = drawn.label;
+    setMood(color);
+    show(emoji, sentence, label, false);
+    result = { emoji, sentence, label, rare: null, color };
+    state.dry++;
+    playPop();
+    witchOnSentence(drawn.tag);
+  }
+  hintTick();
+  checkTapAch(false);
+  save();
+  schedulePush();
+}
+
+/* ---- awards ---- */
+function grant(t) {
+  const prev = state.awards[t.id];
+  state.awards[t.id] = { count: (prev ? prev.count : 0) + 1, first: prev ? prev.first : new Date().toISOString() };
+  save();
+  updateBadge();
+}
+function foundCount() { return RARES.filter(t => state.awards[t.id]).length; }
+function updateBadge() { $("openLib").textContent = "🏆 " + foundCount() + "/" + RARES.length; }
+
+/* ---- celebration takeover ---- */
+let lastFocus = null;
+let current = null;
+let overlayOpenedAt = 0;
+function onClaim() {
+  if (Date.now() - overlayOpenedAt < 900) return;
+  if (!current || current.phase !== "claim") { closeOverlay(); return; }
+  current.phase = "step";
+  $("claim").hidden = true;
+  STEPS[current.t.id].run($("stage"), finishStep);
+}
+function finishStep(update, html) {
+  if (!current) return;
+  if (!current.preview && state.awards[current.t.id]) {
+    const a = state.awards[current.t.id];
+    a.extra = a.extra || {};
+    update(a.extra);
+    save();
+  }
+  const stage = $("stage");
+  stage.className = "stage";
+  stage.innerHTML = `<div class="cert">${html}</div>` + (current.preview ? `<p class="shint">Preview only. Nothing was saved.</p>` : "");
+  current.phase = "done";
+  $("claim").textContent = "Done";
+  $("claim").hidden = false;
+  $("claim").focus();
+}
+function celebrate(t, preview) {
+  lastFocus = document.activeElement;
+  const ov = $("overlay");
+  ov.className = "overlay t-" + t.id;
+  $("podds").textContent = (preview ? "Preview · " : "") + fmtOdds(t.odds);
+  $("pgreet").textContent = t.greet;
+  $("pemoji").textContent = t.emoji;
+  $("ptitle").textContent = t.title;
+  $("pline").textContent = t.line;
+  const got = state.awards[t.id];
+  $("paward").innerHTML = preview
+    ? `Find it to earn <strong>${t.award}</strong>`
+    : `Award unlocked: <strong>${t.award}</strong>` + (got && got.count > 1 ? ` (×${got.count})` : "");
+  $("claim").textContent = t.claim;
+  $("claim").hidden = false;
+  $("skipNext").hidden = !!preview || !(got && got.count > 1) || state.skipRepeats;
+  $("stage").className = "stage";
+  $("stage").innerHTML = "";
+  current = { t, preview, phase: "claim" };
+
+  const fx = $("fx");
+  fx.innerHTML = "";
+  if (!reduced()) {
+    const f = t.fx;
+    for (let i = 0; i < f.n; i++) {
+      const p = document.createElement("span");
+      p.className = "pt " + f.mode;
+      p.textContent = f.chars[i % f.chars.length];
+      p.style.fontSize = (f.size[0] + rand() * (f.size[1] - f.size[0])) + "px";
+      p.style.color = "var(--o-accent)";
+      p.style.setProperty("--x", (rand() * 100) + "vw");
+      p.style.setProperty("--y", (rand() * 100) + "vh");
+      p.style.setProperty("--d", (f.mode === "twinkle" ? 1.5 + rand() * 3 : 3 + rand() * 5) + "s");
+      p.style.setProperty("--delay", (-rand() * 8) + "s");
+      fx.appendChild(p);
+    }
+  }
+  $("library").hidden = true;
+  ov.hidden = false;
+  // focus the screen itself, not the button, so a held Space key can't press it by accident
+  overlayOpenedAt = Date.now();
+  ov.focus();
+}
+function closeOverlay() {
+  $("overlay").hidden = true;
+  $("fx").innerHTML = "";
+  $("stage").innerHTML = "";
+  current = null;
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+  if (pendingWitch) { const f = pendingWitch; pendingWitch = null; setTimeout(f, 250); }
+}
+
+/* ---- library ---- */
+const previewMode = () => location.hash === "#preview";
+function renderLibrary() {
+  $("libSub").textContent = foundCount() + " of " + RARES.length + " rare finds collected";
+  $("slots").innerHTML = RARES.map(t => {
+    const got = state.awards[t.id];
+    const date = got ? new Date(got.first).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "";
+    return `<li class="slot t-${t.id}${got ? "" : " locked"}">
+      <div class="medal" aria-hidden="true">${got ? t.emoji : "?"}</div>
+      <div class="info">
+        <p class="name">${got ? t.award : "???"}</p>
+        <p class="meta">${got ? `${t.title} · found ${date}${got.count > 1 ? " · ×" + got.count : ""}` : "Not found yet"}</p>
+        ${got && got.extra && STEPS[t.id].summary(got.extra) ? `<p class="extra">${STEPS[t.id].summary(got.extra)}</p>` : ""}
+        ${previewMode() ? `<button class="peek" type="button" data-id="${t.id}">Preview</button>` : ""}
+      </div>
+      <span class="tier">${fmtOdds(t.odds)}</span>
+    </li>`;
+  }).join("");
+}
+function openLibrary() {
+  lastFocus = document.activeElement;
+  renderLibrary();
+  renderExtras();
+  $("library").hidden = false;
+  $("closeLib").focus();
+}
+function closeLibrary() {
+  $("library").hidden = true;
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+}
+
+/* ---- wiring ---- */
+$("tap").addEventListener("click", next);
+$("claim").addEventListener("click", onClaim);
+$("openLib").addEventListener("click", openLibrary);
+$("closeLib").addEventListener("click", closeLibrary);
+$("library").addEventListener("click", e => {
+  if (e.target === $("library")) closeLibrary();
+  const peek = e.target.closest(".peek");
+  if (peek) { const t = RARES.find(x => x.id === peek.dataset.id); playRare(t.id); celebrate(t, true); }
+});
+document.addEventListener("keydown", e => {
+  const open = !$("overlay").hidden || !$("library").hidden || !$("board").hidden || !$("nameDlg").hidden || !$("witchDlg").hidden;
+  if (e.key === "Escape") {
+    if (!$("overlay").hidden) closeOverlay();
+    else if (!$("witchDlg").hidden) closeWitchIntro();
+    else if (!$("nameDlg").hidden) { if (state.name) closeNameDlg(); }
+    else if (!$("board").hidden) closeBoard();
+    else if (!$("library").hidden) closeLibrary();
+    return;
+  }
+  if (!open && e.code === "Space" && e.target.tagName !== "BUTTON") { e.preventDefault(); next(); }
+});
+window.addEventListener("hashchange", () => { if (!$("library").hidden) renderLibrary(); });
+
+$("copy").addEventListener("click", () => {
+  const text = $("emoji").textContent + " " + $("sentence").textContent;
+  try {
+    navigator.clipboard.writeText(text).then(() => { $("copy").textContent = "Copied!"; }, selectText);
+  } catch (_) { selectText(); }
+  function selectText() {
+    const range = document.createRange();
+    range.selectNodeContents($("sentence"));
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    $("copy").textContent = "Selected";
+  }
+});
+
+/* ---------- username + online leaderboard ---------- */
+const online = { db: null, me: null, ref: null, ready: false, loaded: false, slow: false, failed: false, canPost: true, docs: [] };
+let pushTimer = null, writing = false, dirty = false, boardFocus = null;
+
+function cleanName(s) { return s.replace(/\s+/g, " ").trim(); }
+function showName() {
+  $("whoName").textContent = state.name || "Pick a name";
+  $("boardMe").textContent = state.name || "—";
+}
+
+function openNameDlg() {
+  boardFocus = document.activeElement;
+  $("board").hidden = true;
+  $("nameInput").value = state.name || "";
+  $("nameErr").textContent = "";
+  $("nameCancel").hidden = !state.name;
+  $("nameDlg").hidden = false;
+  $("nameInput").focus();
+}
+function closeNameDlg() {
+  $("nameDlg").hidden = true;
+  if (boardFocus && boardFocus.focus) boardFocus.focus();
+}
+$("nameForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = cleanName($("nameInput").value);
+  if (name.length < 2) { $("nameErr").textContent = "Use at least 2 characters."; $("nameInput").focus(); return; }
+  if (name.length > 16) { $("nameErr").textContent = "Keep it to 16 characters or fewer."; $("nameInput").focus(); return; }
+  const taken = online.docs.some(d => d.id !== online.me && cleanName(String((d.data() || {}).name || "")).toLowerCase() === name.toLowerCase());
+  if (taken) { $("nameErr").textContent = "Someone on the leaderboard already uses that name. Try another."; $("nameInput").focus(); return; }
+  state.name = name;
+  save();
+  showName();
+  closeNameDlg();
+  schedulePush(0);
+});
+$("nameCancel").addEventListener("click", closeNameDlg);
+$("who").addEventListener("click", openNameDlg);
+$("changeName").addEventListener("click", openNameDlg);
+
+function openBoard() {
+  boardFocus = document.activeElement;
+  renderBoard();
+  $("board").hidden = false;
+  $("closeBoard").focus();
+}
+function closeBoard() {
+  $("board").hidden = true;
+  if (boardFocus && boardFocus.focus) boardFocus.focus();
+}
+$("openBoard").addEventListener("click", openBoard);
+$("closeBoard").addEventListener("click", closeBoard);
+$("board").addEventListener("click", e => { if (e.target === $("board")) closeBoard(); });
+
+function renderBoard() {
+  const status = $("boardStatus");
+  if (online.failed) status.textContent = "The leaderboard opens for people signed in to claude.ai. Your taps still count on this device.";
+  else if (!online.loaded && online.slow) status.textContent = "Can't reach the leaderboard right now. It will appear once it connects.";
+  else if (!online.loaded) status.textContent = "Loading the leaderboard…";
+  else if (!online.canPost) status.textContent = "You can see the board, but your taps can't be posted yet. The owner can fix this by giving you Contributor access.";
+  else if (!state.name) status.textContent = "Pick a username to join the board.";
+  else status.textContent = "";
+
+  const list = $("ranks");
+  list.innerHTML = "";
+  const rows = online.docs
+    .map(d => ({ id: d.id, ...(d.data() || {}) }))
+    .filter(r => typeof r.taps === "number" && r.name);
+  if (online.loaded && !rows.length) {
+    const li = document.createElement("li");
+    li.className = "board-status";
+    li.textContent = "No one is on the board yet. Tap to take first place!";
+    list.appendChild(li);
+  }
+  rows.forEach((r, i) => {
+    const li = document.createElement("li");
+    li.className = "rank" + (r.id === online.me ? " me" : "");
+    const pos = document.createElement("span");
+    pos.className = "pos" + (i < 3 ? " medal-pos" : "");
+    pos.textContent = ["🥇", "🥈", "🥉"][i] || String(i + 1);
+    const who = document.createElement("div");
+    who.className = "who2";
+    const nm = document.createElement("p");
+    nm.className = "pname";
+    nm.textContent = String(r.name).slice(0, 16);
+    if (r.id === online.me) { const y = document.createElement("span"); y.className = "you"; y.textContent = "you"; nm.appendChild(y); }
+    const finds = document.createElement("p");
+    finds.className = "finds";
+    const found = Array.isArray(r.finds) ? RARES.filter(t => r.finds.includes(t.id)) : [];
+    finds.textContent = found.map(t => t.emoji).join(" ");
+    if (found.length) finds.title = found.map(t => t.award).join(", ");
+    who.append(nm, finds);
+    const taps = document.createElement("span");
+    taps.className = "ptaps";
+    taps.textContent = Math.max(0, Math.floor(r.taps)).toLocaleString("en-US");
+    const sm = document.createElement("small");
+    sm.textContent = r.taps === 1 ? "tap" : "taps";
+    taps.appendChild(sm);
+    li.append(pos, who, taps);
+    list.appendChild(li);
+  });
+}
+
+/* Post this player's total, at most once per pause in tapping. */
+function schedulePush(delay = 1500) {
+  if (!online.ready || !online.canPost || !state.name) return;
+  dirty = true;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(flushPush, delay);
+}
+async function flushPush() {
+  if (writing || !dirty) return;
+  writing = true;
+  dirty = false;
+  try {
+    await online.ref.set({
+      name: state.name,
+      taps: state.taps,
+      finds: RARES.filter(t => state.awards[t.id]).map(t => t.id),
+      updatedAt: Date.now()
+    });
+  } catch (err) {
+    const code = err && err.code;
+    if (code === "invalid_argument" || code === "not_granted" || code === "revoked") { online.canPost = false; renderBoard(); }
+    else if (code === "unavailable") { dirty = true; setTimeout(flushPush, 2000 + Math.random() * 2000); }
+  }
+  writing = false;
+  if (dirty) schedulePush();
+}
+document.addEventListener("visibilitychange", () => { if (document.hidden && dirty) { clearTimeout(pushTimer); flushPush(); } });
+
+async function startOnline() {
+  const use = n => (window.claude && window.claude.use) ? Promise.resolve(window.claude.use(n)).catch(() => null) : Promise.resolve(null);
+  const [db, user] = await Promise.all([use("db"), use("user")]);
+  const me = user ? await user.id() : null;
+  if (!db || !me) { online.failed = true; renderBoard(); return; }
+  online.db = db;
+  online.me = me;
+  online.ref = db.doc("players/" + me);
+
+  const slowTimer = setTimeout(() => { online.slow = true; renderBoard(); }, 10000);
+  db.collection("players").orderBy("taps", "desc").limit(100).onSnapshot(snap => {
+    online.docs = snap.docs;
+    if (!snap.metadata.fromCache) { online.loaded = true; online.slow = false; clearTimeout(slowTimer); }
+    renderBoard();
+  }, () => { clearTimeout(slowTimer); online.failed = true; renderBoard(); });
+
+  try {
+    const mine = await online.ref.get();
+    if (mine.exists) {
+      const d = mine.data() || {};
+      if (!state.name && d.name) { state.name = cleanName(String(d.name)).slice(0, 16); $("nameDlg").hidden = true; }
+      if (typeof d.taps === "number" && d.taps > state.taps) state.taps = Math.floor(d.taps);
+      save();
+      showName();
+      $("count").textContent = state.taps === 1 ? "1 tap" : state.taps.toLocaleString("en-US") + " taps";
+    }
+  } catch (_) {}
+  online.ready = true;
+  schedulePush(0);
+}
+
+/* =====================================================================
+   Extras: share card, sound, vibration, achievements, streak, themes,
+   first-time hint, witch buddy, repeat-celebration skipping
+   ===================================================================== */
+let result = { emoji: "🦄", sentence: sentences[0], label: "Fact of the moment", rare: null, color: "#ff5d73" };
+let lastTapAt = Date.now(), idleNagged = false, pendingWitch = null;
+const BORED_AFTER = 150;
+const useCap = n => (window.claude && window.claude.use) ? Promise.resolve(window.claude.use(n)).catch(() => null) : Promise.resolve(null);
+
+/* ---------- achievements + themes ---------- */
+const TAP_ACH = [
+  { id: "t10",    n: 10,    emoji: "👆", title: "Warm-Up Finger",       theme: "sakura" },
+  { id: "t100",   n: 100,   emoji: "💯", title: "Century Tapper",        theme: "neon" },
+  { id: "t500",   n: 500,   emoji: "🎯", title: "Tap Sharpshooter",      theme: "retro" },
+  { id: "t1000",  n: 1000,  emoji: "🏅", title: "Thousand-Tap Legend",   theme: "galaxy" },
+  { id: "t5000",  n: 5000,  emoji: "🌋", title: "Unstoppable Thumb",     theme: "midnight" },
+  { id: "t10000", n: 10000, emoji: "👑", title: "Monarch of Taps",       theme: "gold" }
+];
+const STREAK_ACH = [
+  { id: "s3",  days: 3,  emoji: "🔥", title: "Warming Up",          theme: "sunset" },
+  { id: "s7",  days: 7,  emoji: "📅", title: "Week Warrior",        theme: "ocean" },
+  { id: "s14", days: 14, emoji: "🌙", title: "Fortnight Faithful",  theme: "forest" },
+  { id: "s30", days: 30, emoji: "🏆", title: "Monthly Marvel",      theme: "aurora" }
+];
+const ACH_ALL = [...TAP_ACH, ...STREAK_ACH];
+const THEMES = [
+  { id: "default",  name: "Candy",    unlock: null,     spark: ["✨"],        sw: ["#ff5d73", "#f6f4fb"] },
+  { id: "sakura",   name: "Sakura",   unlock: "t10",    spark: ["🌸", "💮"],  sw: ["#ff9fbf", "#fde7ef"] },
+  { id: "neon",     name: "Neon",     unlock: "t100",   spark: ["⚡", "✦"],   sw: ["#ff3df2", "#07060f"] },
+  { id: "retro",    name: "Retro",    unlock: "t500",   spark: ["🕹️", "📼"], sw: ["#e0a800", "#f1e2c0"] },
+  { id: "galaxy",   name: "Galaxy",   unlock: "t1000",  spark: ["🪐", "⭐"],  sw: ["#a46bff", "#0b0620"] },
+  { id: "midnight", name: "Midnight", unlock: "t5000",  spark: ["🌙", "✦"],  sw: ["#8bb4ff", "#0a1020"] },
+  { id: "gold",     name: "Gold",     unlock: "t10000", spark: ["👑", "💛"],  sw: ["#ffd36b", "#1b1408"] },
+  { id: "sunset",   name: "Sunset",   unlock: "s3",     spark: ["🌅", "🧡"],  sw: ["#ff8a5c", "#ffd9bf"] },
+  { id: "ocean",    name: "Ocean",    unlock: "s7",     spark: ["🫧", "🐚"],  sw: ["#2d9cdb", "#d4f1ff"] },
+  { id: "forest",   name: "Forest",   unlock: "s14",    spark: ["🍃", "🌿"],  sw: ["#6fcf6b", "#17251a"] },
+  { id: "aurora",   name: "Aurora",   unlock: "s30",    spark: ["💫", "🌌"],  sw: ["#3df2a0", "#06171c"] }
+];
+const themeById = id => THEMES.find(t => t.id === id) || THEMES[0];
+const themeUnlocked = t => !t.unlock || !!state.ach[t.unlock];
+function skinSpark() { const s = themeById(state.theme).spark; return s[Math.floor(rand() * s.length)]; }
+function applySkin(id) {
+  const t = themeById(id);
+  if (!themeUnlocked(t)) return;
+  state.theme = t.id;
+  if (t.id === "default") delete root.dataset.skin; else root.dataset.skin = t.id;
+  save();
+}
+
+function unlockAch(a, quiet) {
+  if (state.ach[a.id]) return false;
+  state.ach[a.id] = new Date().toISOString();
+  if (!quiet) {
+    const theme = themeById(a.theme);
+    toast(a.emoji, "Achievement unlocked", a.title, `New theme unlocked: ${theme.name}. Pick it in the award library.`);
+    playAch();
+  }
+  return true;
+}
+function checkTapAch(quiet) {
+  let got = 0;
+  TAP_ACH.forEach(a => { if (state.taps >= a.n && unlockAch(a, quiet)) got++; });
+  if (got) save();
+  updateWitch(!quiet);
+  if (state.taps >= 100 && !state.witch.met && !quiet) setTimeout(openWitchIntro, 900);
+  return got;
+}
+function checkStreakAch(quiet) {
+  let got = 0;
+  STREAK_ACH.forEach(a => { if (state.streak.count >= a.days && unlockAch(a, quiet)) got++; });
+  if (got) save();
+  return got;
+}
+
+/* ---------- daily streak (local dates) ---------- */
+function dayKey(d = new Date()) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function updateStreak() {
+  const today = dayKey();
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  const s = state.streak;
+  if (s.last !== today) {
+    s.count = s.last === dayKey(y) ? s.count + 1 : 1;
+    s.last = today;
+    s.best = Math.max(s.best || 0, s.count);
+    save();
+  }
+  $("streak").textContent = s.count > 0 ? `🔥 ${s.count}-day streak` : "";
+}
+
+/* ---------- toasts ---------- */
+function toast(emoji, kicker, title, sub) {
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.innerHTML = `<div class="temoji" aria-hidden="true"></div><div><p class="tk"></p><p class="tt"></p>${sub ? '<p class="ts"></p>' : ""}</div>`;
+  el.querySelector(".temoji").textContent = emoji;
+  el.querySelector(".tk").textContent = kicker;
+  el.querySelector(".tt").textContent = title;
+  if (sub) el.querySelector(".ts").textContent = sub;
+  $("toasts").appendChild(el);
+  setTimeout(() => el.remove(), 4300);
+}
+
+/* ---------- first-time hint ---------- */
+let hintTaps = 0;
+function hintTick() {
+  if (state.hintDone) return;
+  hintTaps++;
+  if (hintTaps >= 3) {
+    state.hintDone = true;
+    $("firstHint").classList.add("fade");
+    setTimeout(() => { $("firstHint").hidden = true; }, 900);
+  }
+}
+
+/* ---------- vibration ---------- */
+const VIBES = { star: [60], clover: [80, 40, 80], phoenix: [120, 60, 120, 60, 220], egg: [150, 70, 150, 70, 320], diamond: [200, 80, 200, 80, 400], singularity: [300, 100, 300, 100, 600, 150, 900] };
+function vibrateFor(id) { try { if (navigator.vibrate) navigator.vibrate(VIBES[id] || [50]); } catch (_) {} }
+
+/* ---------- sound (Web Audio, no files) ---------- */
+let actx = null, master = null, echo = null;
+function audio() {
+  if (state.muted) return null;
+  try {
+    if (!actx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      actx = new AC();
+      master = actx.createGain(); master.gain.value = .55; master.connect(actx.destination);
+      echo = actx.createDelay(1); echo.delayTime.value = .24;
+      const fb = actx.createGain(); fb.gain.value = .38;
+      const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2600;
+      echo.connect(lp); lp.connect(fb); fb.connect(echo); lp.connect(master);
+    }
+    if (actx.state === "suspended") actx.resume();
+    return actx;
+  } catch (_) { return null; }
+}
+function tone(f, t, dur, o = {}) {
+  const a = actx, s = a.currentTime + t;
+  const osc = a.createOscillator(), g = a.createGain();
+  osc.type = o.type || "sine";
+  osc.frequency.setValueAtTime(f, s);
+  if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, s + dur);
+  g.gain.setValueAtTime(.0001, s);
+  g.gain.exponentialRampToValueAtTime(o.vol || .15, s + (o.attack || .006));
+  g.gain.exponentialRampToValueAtTime(.0001, s + dur);
+  let out = g;
+  if (o.lp) { const f2 = a.createBiquadFilter(); f2.type = "lowpass"; f2.frequency.value = o.lp; g.connect(f2); out = f2; }
+  out.connect(master);
+  if (o.wet) { const w = a.createGain(); w.gain.value = o.wet; out.connect(w); w.connect(echo); }
+  osc.connect(g);
+  osc.start(s); osc.stop(s + dur + .05);
+}
+function noise(t, dur, o = {}) {
+  const a = actx, s = a.currentTime + t;
+  const buf = a.createBuffer(1, Math.ceil(a.sampleRate * dur), a.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const src = a.createBufferSource(); src.buffer = buf;
+  const bp = a.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(o.from || 800, s); bp.Q.value = o.q || 1;
+  if (o.to) bp.frequency.exponentialRampToValueAtTime(o.to, s + dur);
+  const g = a.createGain();
+  g.gain.setValueAtTime(.0001, s);
+  g.gain.exponentialRampToValueAtTime(o.vol || .2, s + (o.attack || .01));
+  g.gain.exponentialRampToValueAtTime(.0001, s + dur);
+  src.connect(bp); bp.connect(g); g.connect(master);
+  if (o.wet) { const w = a.createGain(); w.gain.value = o.wet; g.connect(w); w.connect(echo); }
+  src.start(s); src.stop(s + dur + .05);
+}
+function playPop() {
+  if (!audio()) return;
+  const f = 380 + rand() * 260;
+  tone(f * 1.7, 0, .11, { to: f * .55, vol: .2 });
+  tone(f * 3.2, 0, .05, { type: "triangle", vol: .04 });
+}
+function playAch() {
+  if (!audio()) return;
+  [659, 831, 988, 1319].forEach((f, i) => tone(f, i * .08, .35, { type: "triangle", vol: .12, wet: .35 }));
+}
+function playWitch() {
+  if (!audio()) return;
+  tone(880, 0, .12, { to: 1320, type: "triangle", vol: .08 });
+  tone(1320, .09, .16, { to: 1760, type: "triangle", vol: .07, wet: .3 });
+}
+function playRare(id) {
+  if (!audio()) return;
+  if (id === "star") {
+    [1047, 1319, 1568, 2093, 2637].forEach((f, i) => tone(f, i * .07, .7, { type: "triangle", vol: .11, wet: .5 }));
+    noise(0, .6, { from: 6000, to: 12000, vol: .03, q: 2 });
+  } else if (id === "clover") {
+    [784, 988, 1175, 1568, 1976].forEach((f, i) => tone(f, i * .09, .6, { type: "triangle", vol: .12, wet: .4 }));
+    tone(2093, .5, 1.6, { vol: .09, wet: .5 }); tone(1047, .5, 1.4, { vol: .08 });
+  } else if (id === "phoenix") {
+    noise(0, 1, { from: 300, to: 4000, vol: .14, q: .8, attack: .3 });
+    tone(110, 0, 1, { to: 440, type: "sawtooth", vol: .06, lp: 1800, attack: .2 });
+    [523, 659, 784, 1047].forEach(f => tone(f, .95, 1.6, { type: "sawtooth", vol: .045, lp: 2600, wet: .5, attack: .03 }));
+    tone(1568, 1.0, 1.4, { type: "triangle", vol: .07, wet: .5 });
+  } else if (id === "egg") {
+    tone(65, 0, 2.4, { vol: .22, attack: .4 });
+    tone(98, 0, 2.4, { type: "triangle", vol: .08, attack: .5 });
+    [523, 587, 659, 784, 880, 1047, 1175, 1319, 1568].forEach((f, i) => tone(f, .3 + i * .06, .9, { type: "triangle", vol: .08, wet: .5 }));
+    noise(1.0, .25, { from: 2500, to: 900, vol: .18, q: 1.5 });
+    noise(1.25, .2, { from: 3000, to: 1200, vol: .14, q: 1.5 });
+    [392, 494, 587, 784].forEach(f => tone(f, 1.4, 1.6, { type: "sawtooth", vol: .04, lp: 2200, wet: .5 }));
+  } else if (id === "diamond") {
+    tone(392, 0, 2.6, { vol: .1, wet: .4 });
+    [1568, 2093, 2637, 3136, 4186, 3520, 2637].forEach((f, i) => tone(f, i * .07, 2.2, { vol: .06, wet: .6 }));
+    noise(.1, 1.2, { from: 8000, to: 14000, vol: .025, q: 3 });
+  } else if (id === "singularity") {
+    // legendary: low drone, a timpani hit, a rising four-chord fanfare and a shimmering finish
+    tone(55, 0, 5, { type: "sawtooth", vol: .08, lp: 400, attack: 1 });
+    tone(82.5, 0, 5, { type: "sawtooth", vol: .06, lp: 500, attack: 1.2 });
+    tone(95, .1, .9, { to: 45, vol: .45 }); noise(.1, .5, { from: 200, to: 80, vol: .25, q: .7 });
+    const chords = [[262, 330, 392], [349, 440, 523], [392, 494, 587], [523, 659, 784, 1047]];
+    const times = [.7, 1.3, 1.9, 2.6];
+    chords.forEach((c, i) => c.forEach(f => {
+      const d = i === 3 ? 2.6 : .55;
+      tone(f, times[i], d, { type: "sawtooth", vol: .045, lp: 2400, wet: .55, attack: .04 });
+      tone(f * 2, times[i], d, { type: "triangle", vol: .035, wet: .5 });
+    }));
+    tone(95, 2.6, 1.2, { to: 45, vol: .45 }); noise(2.6, .6, { from: 220, to: 80, vol: .25, q: .7 });
+    [2093, 2637, 3136, 4186, 5274, 4186, 3136].forEach((f, i) => tone(f, 2.8 + i * .09, 1.6, { vol: .04, wet: .7 }));
+  }
+}
+function renderMute() {
+  $("mute").setAttribute("aria-pressed", state.muted ? "true" : "false");
+  $("mute").setAttribute("aria-label", state.muted ? "Unmute sounds" : "Mute sounds");
+  $("muteWaves").style.display = state.muted ? "none" : "";
+  $("muteX").style.display = state.muted ? "" : "none";
+}
+$("mute").addEventListener("click", () => {
+  state.muted = !state.muted;
+  save();
+  renderMute();
+  if (!state.muted) playPop();
+});
+
+/* ---------- share card (1080x1920 canvas) ---------- */
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function wrapLines(ctx, text, maxW) {
+  const words = text.split(" "), lines = [];
+  let line = "";
+  words.forEach(w => {
+    const test = line ? line + " " + w : w;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+  });
+  if (line) lines.push(line);
+  return lines;
+}
+function cssVar(n) { return getComputedStyle(root).getPropertyValue(n).trim(); }
+async function drawShareCard() {
+  try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
+  const W = 1080, H = 1920;
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const ctx = c.getContext("2d");
+  const mood = result.color, moodFg = textOn(mood);
+  const base = cssVar("--base") || "#f6f4fb", fg = cssVar("--fg") || "#221f36", muted = cssVar("--muted") || "#6e6a88";
+  const cardBg = cssVar("--sheet") || "#ffffff";
+  const display = cssVar("--display") || "sans-serif", body = cssVar("--body") || "sans-serif";
+
+  ctx.fillStyle = base; ctx.fillRect(0, 0, W, H);
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, mood + "66"); g.addColorStop(.55, mood + "22"); g.addColorStop(1, mood + "88");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  [[160, 220, 380], [940, 1640, 460]].forEach(([x, y, r]) => {
+    const rg = ctx.createRadialGradient(x, y, 0, x, y, r);
+    rg.addColorStop(0, mood + "99"); rg.addColorStop(1, mood + "00");
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+  });
+
+  ctx.save();
+  ctx.shadowColor = "#0000003a"; ctx.shadowBlur = 60; ctx.shadowOffsetY = 24;
+  roundRect(ctx, 90, 250, 900, 1320, 64); ctx.fillStyle = cardBg; ctx.fill();
+  ctx.restore();
+  if (result.rare) { roundRect(ctx, 90, 250, 900, 1320, 64); ctx.lineWidth = 8; ctx.strokeStyle = mood; ctx.stroke(); }
+
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.beginPath(); ctx.arc(540, 560, 180, 0, Math.PI * 2); ctx.fillStyle = mood + "3a"; ctx.fill();
+  ctx.font = `220px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  ctx.fillStyle = fg; ctx.fillText(result.emoji, 540, 575);
+
+  ctx.font = `800 34px ${body}`;
+  ctx.fillStyle = result.rare ? mood : muted;
+  try { ctx.letterSpacing = "6px"; } catch (_) {}
+  ctx.fillText(result.label.toUpperCase(), 540, 820);
+  try { ctx.letterSpacing = "0px"; } catch (_) {}
+
+  let size = 78;
+  ctx.font = `800 ${size}px ${display}`;
+  let lines = wrapLines(ctx, result.sentence, 760);
+  while (lines.length > 6 && size > 48) { size -= 6; ctx.font = `800 ${size}px ${display}`; lines = wrapLines(ctx, result.sentence, 760); }
+  ctx.fillStyle = fg;
+  const lh = size * 1.22;
+  let y = 930 + lh / 2;
+  lines.forEach(l => { ctx.fillText(l, 540, y); y += lh; });
+
+  if (result.rare) {
+    const badge = fmtOdds(result.rare.odds) + " · " + result.rare.title;
+    ctx.font = `800 36px ${body}`;
+    const bw = ctx.measureText(badge).width + 80;
+    roundRect(ctx, 540 - bw / 2, y + 20, bw, 76, 38); ctx.fillStyle = mood; ctx.fill();
+    ctx.fillStyle = moodFg; ctx.fillText(badge, 540, y + 59);
+  }
+
+  ctx.font = `800 40px ${body}`; ctx.fillStyle = muted;
+  const tapsLine = state.taps.toLocaleString("en-US") + (state.taps === 1 ? " tap" : " taps") + (state.streak.count > 1 ? `  ·  🔥 ${state.streak.count}-day streak` : "");
+  ctx.fillText(tapsLine, 540, 1490);
+
+  ctx.font = `800 64px ${display}`; ctx.fillStyle = fg;
+  ctx.fillText("Tap for a Sentence", 540, 1730);
+  ctx.font = `700 32px ${body}`; ctx.fillStyle = muted;
+  ctx.fillText(state.name ? "found by " + state.name : "tap · collect · share", 540, 1800);
+  return c;
+}
+$("share").addEventListener("click", async () => {
+  const btn = $("share");
+  const label = btn.textContent;
+  btn.textContent = "Making…";
+  btn.disabled = true;
+  try {
+    const canvas = await drawShareCard();
+    const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
+    if (!blob) throw new Error("no image");
+    const filename = "tap-for-a-sentence.png";
+    const file = new File([blob], filename, { type: "image/png" });
+    const inViewer = !!(window.claude && window.claude.use);
+    const phone = matchMedia("(pointer: coarse)").matches;
+    if (inViewer) {
+      const dl = await useCap("downloads");
+      if (dl) {
+        try { await dl.save({ filename, data: blob }); btn.textContent = "Saved!"; }
+        catch (e) { btn.textContent = e && e.code === "declined" ? label : "Couldn't save"; }
+        return;
+      }
+    }
+    if (phone && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "Tap for a Sentence", text: result.emoji + " " + result.sentence }); btn.textContent = "Shared!"; }
+      catch (_) { btn.textContent = label; }
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    btn.textContent = "Downloaded!";
+  } catch (_) {
+    btn.textContent = "Couldn't share";
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = label; }, 2000);
+  }
+});
+
+/* ---------- skip repeat celebrations ---------- */
+$("skipRepeats").addEventListener("change", e => { state.skipRepeats = e.target.checked; save(); });
+$("skipNext").addEventListener("click", () => {
+  state.skipRepeats = true;
+  save();
+  $("skipNext").hidden = true;
+  closeOverlay();
+  toast("⏭️", "Got it", "Repeat celebrations skipped", "Turn them back on in the award library.");
+});
+
+/* ---------- witch buddy: Lumi ---------- */
+const WITCH_TAP_LINES = [
+  "Hehe, that tickles!",
+  "Boop! Right back at you.",
+  "I'm practicing a spell that turns broccoli into cake.",
+  "Did you know my hat is 80% pockets?",
+  "Wheee! Spin me again?",
+  "I'm not lost. I'm exploring.",
+  "Psst… I have a feeling about the next tap.",
+  "My cape smells like mint. Don't ask how I know.",
+  "Hi hi hi!",
+  "Yawn… magic is sleepy work.",
+  "Sparkle mode: ON ✨",
+  "I once turned a frog into a slightly different frog.",
+  "You have very lucky fingers.",
+  "Tap tap tap! I believe in you!",
+  "My broom is in the shop. Again.",
+  "Let's find a shooting star together!",
+  "Witch-in-training. Level: adorable.",
+  "Careful, I'm full of glitter.",
+  "If you find a diamond, can I wear it? Just once?"
+];
+const WITCH_ANIMS = ["giggle", "spin", "wave", "sparkle", "yawn", "hop", "twirl"];
+const CUTE_LINES = ["Aww, that's so sweet!", "My heart just did a little flip!", "Cutest sentence ever!", "Hehe, I love that one.", "Save that one for a rainy day!"];
+const WEIRD_LINES = ["Wait… what?", "I have so many questions.", "That doesn't sound right… or does it?", "Hmm. Magic is weird sometimes.", "I'm going to pretend I understood that."];
+const RARE_LINES = {
+  star: "A SHOOTING STAR! Quick, make a wish!",
+  clover: "Four leaves! Luck is on our side!",
+  phoenix: "A PHOENIX FLAME?! My hat is on fire with excitement!",
+  egg: "A DRAGON EGG?! Can we keep it? Please, please, please!",
+  diamond: "A MILLION-TO-ONE DIAMOND!! I think I'm going to faint…",
+  singularity: "THE SINGULARITY?! I… I have to sit down. You're LEGENDARY!"
+};
+const RARE_RANK = { star: 1, clover: 2, phoenix: 3, egg: 4, diamond: 5, singularity: 6 };
+const BORED_LINES = ["Are we ever finding anything good?", "*sigh* Still no shooting stars…", "I'll just rest my chin here for a bit.", "Maybe the next one… or the next… or the next…", "Is the luck on vacation?"];
+const IDLE_LINES = ["Hellooo? Still there?", "*yawn* I'll wait right here…", "Tap tap? No? Okay…", "I counted my sparkles twice. Still waiting."];
+const OUTFITS = [
+  { at: 100,   name: "Starter outfit",          part: null },
+  { at: 500,   name: "Star wand",                part: "A star wand! Now I can do real magic… probably!" },
+  { at: 1000,  name: "Gem necklace",             part: "A gem necklace! Do I sparkle? I sparkle." },
+  { at: 5000,  name: "Golden trim",              part: "Golden trim on my hat and cape! So fancy!" },
+  { at: 10000, name: "Crown-hat and glowing aura", part: "A CROWN-HAT and an aura?! I'm basically royalty now." }
+];
+
+function witchSVG(uid) {
+  return `<svg class="witch" data-face="normal" viewBox="0 0 140 160" aria-hidden="true">
+  <defs><radialGradient id="aura-${uid}"><stop offset="0" stop-color="#fff3b0" stop-opacity=".95"/><stop offset=".6" stop-color="#ffd36b" stop-opacity=".35"/><stop offset="1" stop-color="#ffd36b" stop-opacity="0"/></radialGradient></defs>
+  <circle class="w-aura" cx="70" cy="92" r="68" fill="url(#aura-${uid})"/>
+  <g class="wbody">
+    <g class="w-bat" transform="translate(112 30)"><path d="M0 4 Q-6 -4 -12 2 Q-8 2 -7 6 Q-4 3 0 6 Q4 3 7 6 Q8 2 12 2 Q6 -4 0 4Z" fill="#5b4a7a"/><circle cx="-2" cy="2.5" r=".9" fill="#fff"/><circle cx="2" cy="2.5" r=".9" fill="#fff"/></g>
+    <path d="M36 84 Q70 74 104 84 L114 146 Q70 156 26 146 Z" fill="#9fe3d0"/>
+    <path class="w-gold" d="M27 145 Q70 155 113 145" fill="none" stroke="#f5c542" stroke-width="4" stroke-linecap="round"/>
+    <path d="M50 92 Q70 86 90 92 L98 140 Q70 147 42 140 Z" fill="#ffc9dc"/>
+    <path d="M45 132 Q70 139 95 132" stroke="#fff" stroke-width="3" fill="none" stroke-dasharray="2 6" stroke-linecap="round"/>
+    <ellipse cx="60" cy="146" rx="8" ry="5" fill="#6b5a8e"/><ellipse cx="80" cy="146" rx="8" ry="5" fill="#6b5a8e"/>
+    <ellipse cx="44" cy="108" rx="6" ry="13" transform="rotate(20 44 108)" fill="#ffc9dc"/><circle cx="40" cy="120" r="5" fill="#ffe6d6"/>
+    <g class="w-arm">
+      <ellipse cx="96" cy="108" rx="6" ry="13" transform="rotate(-20 96 108)" fill="#ffc9dc"/><circle cx="100" cy="120" r="5" fill="#ffe6d6"/>
+      <g class="w-wand"><line x1="100" y1="120" x2="117" y2="97" stroke="#9b6b45" stroke-width="3" stroke-linecap="round"/><path class="w-star" d="M118 84 l3.2 6.6 7.2 1 -5.2 5 1.3 7.1 -6.5 -3.4 -6.5 3.4 1.3 -7.1 -5.2 -5 7.2 -1z" fill="#ffd84d" stroke="#f0b400" stroke-width=".8"/></g>
+    </g>
+    <path d="M40 60 Q36 98 50 102 L90 102 Q104 98 100 60 Z" fill="#c9b6ff"/>
+    <g class="w-neck"><path d="M57 92 Q70 100 83 92" stroke="#f5c542" stroke-width="2.2" fill="none"/><path d="M70 96 l4.5 4.5 -4.5 5.5 -4.5 -5.5z" fill="#7ee8ff" stroke="#fff" stroke-width=".9"/></g>
+    <circle cx="70" cy="64" r="30" fill="#ffe6d6"/>
+    <path d="M40 62 Q42 34 70 34 Q98 34 100 62 Q92 50 84 54 Q78 44 70 52 Q62 44 56 54 Q48 50 40 62Z" fill="#c9b6ff"/>
+    <circle cx="52" cy="75" r="5" fill="#ff9fbf" opacity=".55"/><circle cx="88" cy="75" r="5" fill="#ff9fbf" opacity=".55"/>
+    <g class="f f-normal"><g class="eyes"><ellipse cx="58" cy="66" rx="5" ry="6.5" fill="#3b2a5a"/><ellipse cx="82" cy="66" rx="5" ry="6.5" fill="#3b2a5a"/><circle cx="60" cy="63.4" r="2" fill="#fff"/><circle cx="84" cy="63.4" r="2" fill="#fff"/><circle cx="56.4" cy="69" r=".95" fill="#fff"/><circle cx="80.4" cy="69" r=".95" fill="#fff"/></g><path d="M66 78 Q70 81.5 74 78" stroke="#3b2a5a" stroke-width="2" fill="none" stroke-linecap="round"/></g>
+    <g class="f f-happy"><path d="M53 67 Q58 60 63 67 M77 67 Q82 60 87 67" stroke="#3b2a5a" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M64 76 Q70 86 76 76 Z" fill="#e0607e"/></g>
+    <g class="f f-shock"><circle cx="58" cy="66" r="7" fill="#fff" stroke="#3b2a5a" stroke-width="1.5"/><circle cx="82" cy="66" r="7" fill="#fff" stroke="#3b2a5a" stroke-width="1.5"/><circle cx="58" cy="66" r="3.6" fill="#3b2a5a"/><circle cx="82" cy="66" r="3.6" fill="#3b2a5a"/><circle cx="59.3" cy="64.6" r="1.2" fill="#fff"/><circle cx="83.3" cy="64.6" r="1.2" fill="#fff"/><ellipse cx="70" cy="81" rx="3.5" ry="4.5" fill="#3b2a5a"/></g>
+    <g class="f f-confused"><ellipse cx="58" cy="66" rx="5" ry="6.5" fill="#3b2a5a"/><circle cx="60" cy="63.4" r="1.9" fill="#fff"/><path d="M77 66 L87 66" stroke="#3b2a5a" stroke-width="2.6" stroke-linecap="round"/><path d="M64 80 q3 -3 6 0 t6 0" stroke="#3b2a5a" stroke-width="2" fill="none" stroke-linecap="round"/><text x="104" y="52" font-size="18" font-weight="800" font-family="sans-serif" fill="#8e7cff">?</text></g>
+    <g class="f f-bored"><path d="M52 65 L64 65 M76 65 L88 65" stroke="#3b2a5a" stroke-width="2.4" stroke-linecap="round"/><path d="M53.5 65.5 A4.5 4 0 0 0 62.5 65.5 Z M77.5 65.5 A4.5 4 0 0 0 86.5 65.5 Z" fill="#3b2a5a"/><path d="M65 80 L75 79" stroke="#3b2a5a" stroke-width="2" stroke-linecap="round"/></g>
+    <g class="f f-sleepy"><path d="M53 66 Q58 70 63 66 M77 66 Q82 70 87 66" stroke="#3b2a5a" stroke-width="2.4" fill="none" stroke-linecap="round"/><ellipse cx="70" cy="80" rx="3.6" ry="4.6" fill="#7a4a5a"/><text x="102" y="48" font-size="13" font-weight="800" font-family="sans-serif" fill="#8e7cff">z</text><text x="110" y="38" font-size="10" font-weight="800" font-family="sans-serif" fill="#8e7cff">z</text></g>
+    <ellipse class="w-chin" cx="76" cy="95" rx="9" ry="6" fill="#ffe6d6" stroke="#f0c9b4" stroke-width="1"/>
+    <g class="w-ribbon" transform="translate(43 52)"><path d="M0 0 L-9 -7 L-9 7 Z M0 0 L9 -7 L9 7Z" fill="#ff8fb8"/><circle r="2.8" fill="#ff6fa3"/></g>
+    <g class="w-hat">
+      <path d="M48 40 Q60 2 92 0 Q80 10 86 40 Z" fill="#8e7cff"/>
+      <path d="M92 0 q7 2 4 9" stroke="#8e7cff" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <rect x="47" y="32" width="41" height="7" rx="3" fill="#ffb3d1"/>
+      <ellipse cx="68" cy="41" rx="38" ry="8" fill="#7a68f0"/>
+      <ellipse class="w-gold" cx="68" cy="41" rx="38" ry="8" fill="none" stroke="#f5c542" stroke-width="3"/>
+      <path class="w-hatstar" d="M66 18 l2 4 4.4 .6 -3.2 3 .8 4.4 -4 -2.1 -4 2.1 .8 -4.4 -3.2 -3 4.4 -.6z" fill="#fff6a8"/>
+      <g class="w-crown"><path d="M52 33 L55 20 L62 27 L68 15 L74 27 L81 20 L84 33 Z" fill="#ffd84d" stroke="#e0a800" stroke-width="1"/><circle cx="68" cy="26" r="2.8" fill="#ff5d9e"/><circle cx="58" cy="29" r="1.9" fill="#7ee8ff"/><circle cx="78" cy="29" r="1.9" fill="#7ee8ff"/><path class="w-star" d="M96 14 l1.4 2.8 3 .4 -2.2 2 .5 3 -2.7 -1.4 -2.7 1.4 .5 -3 -2.2 -2 3 -.4z" fill="#fff6a8"/></g>
+    </g>
+    <g class="w-cat" transform="translate(14 126)"><ellipse cx="8" cy="13" rx="10" ry="8" fill="#3d3550"/><circle cx="8" cy="3" r="7" fill="#3d3550"/><path d="M2 -2 L3 -9 L7 -4 Z M14 -2 L13 -9 L9 -4Z" fill="#3d3550"/><circle cx="5.5" cy="3" r="1.3" fill="#ffd84d"/><circle cx="10.5" cy="3" r="1.3" fill="#ffd84d"/><path d="M18 15 q8 -2 6 -10" stroke="#3d3550" stroke-width="3" fill="none" stroke-linecap="round"/></g>
+  </g>
+</svg>`;
+}
+function witchLevel() { let l = 0; OUTFITS.forEach((o, i) => { if (state.taps >= o.at) l = i; }); return l; }
+function dressWitch(svg) {
+  if (!svg) return;
+  const l = witchLevel(), best = state.streak.best || 0;
+  svg.classList.toggle("has-wand", l >= 1);
+  svg.classList.toggle("has-neck", l >= 2);
+  svg.classList.toggle("has-gold", l >= 3);
+  svg.classList.toggle("has-crown", l >= 4);
+  svg.classList.toggle("has-aura", l >= 4);
+  svg.classList.toggle("has-ribbon", best >= 7);
+  svg.classList.toggle("has-cat", best >= 14);
+  svg.classList.toggle("has-bat", best >= 30);
+}
+const buddySvg = () => $("wfx").querySelector(".witch");
+let faceTimer = null, bubbleTimer = null, animTimer = null;
+const witchShown = () => !$("buddy").hidden;
+function baseFace() { return (state.dry >= BORED_AFTER || idleNagged) ? "bored" : "normal"; }
+function setFace(face, ms) {
+  const svg = buddySvg(); if (!svg) return;
+  svg.dataset.face = face;
+  clearTimeout(faceTimer);
+  if (ms) faceTimer = setTimeout(() => { svg.dataset.face = baseFace(); }, ms);
+}
+function say(text, ms = 3200) {
+  const b = $("bubble");
+  b.textContent = text;
+  b.hidden = false;
+  b.style.animation = "none"; void b.offsetWidth; b.style.animation = "";
+  clearTimeout(bubbleTimer);
+  bubbleTimer = setTimeout(() => { b.hidden = true; }, ms);
+}
+function react(anim) {
+  const w = $("wfx");
+  WITCH_ANIMS.concat(["big"]).forEach(a => w.classList.remove("r-" + a));
+  void w.offsetWidth;
+  if (anim === "sparkle") { floaties(6, ["✨", "⭐", "💫"]); return; }
+  if (anim === "yawn") { setFace("sleepy", 1800); return; }
+  w.classList.add("r-" + anim);
+  clearTimeout(animTimer);
+  animTimer = setTimeout(() => w.classList.remove("r-" + anim), 1300);
+}
+function floaties(n, chars) {
+  if (reduced()) return;
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement("span");
+    s.className = "floaty";
+    s.textContent = chars[i % chars.length];
+    s.style.setProperty("--fx", (rand() * 80 - 40) + "px");
+    s.style.animationDelay = (i * .08) + "s";
+    $("buddy").appendChild(s);
+    setTimeout(() => s.remove(), 1600 + i * 80);
+  }
+}
+function witchOnSentence(tag) {
+  if (!witchShown()) return;
+  if (state.dry === BORED_AFTER || (state.dry > BORED_AFTER && state.dry % 40 === 0)) {
+    setFace("bored");
+    say(BORED_LINES[Math.floor(rand() * BORED_LINES.length)]);
+    return;
+  }
+  if (tag === "cute") {
+    setFace("happy", 1600);
+    floaties(3, ["💗", "💕"]);
+    if (rand() < .3) say(CUTE_LINES[Math.floor(rand() * CUTE_LINES.length)], 2200);
+  } else if (tag === "weird") {
+    setFace("confused", 1600);
+    if (rand() < .3) say(WEIRD_LINES[Math.floor(rand() * WEIRD_LINES.length)], 2200);
+  } else if (state.dry < BORED_AFTER) {
+    setFace("normal");
+  }
+}
+function witchOnRare(t, wasBored) {
+  if (!witchShown()) return;
+  const rank = RARE_RANK[t.id] || 1;
+  setFace("shock", 2200 + rank * 600);
+  react(rank >= 4 ? "big" : "hop");
+  floaties(3 + rank * 3, rank >= 4 ? ["✨", "💎", "⭐", "💫"] : ["✨", "⭐"]);
+  say((wasBored ? "FINALLY!! " : "") + RARE_LINES[t.id], 3000 + rank * 600);
+  setTimeout(() => { if (state.dry === 0) setFace("happy", 2000); }, 2200 + rank * 600);
+}
+$("wfx").addEventListener("click", () => {
+  playWitch();
+  idleNagged = false;
+  const anim = WITCH_ANIMS[Math.floor(rand() * WITCH_ANIMS.length)];
+  react(anim);
+  if (anim !== "yawn") setFace(state.dry >= BORED_AFTER ? "bored" : "happy", 1400);
+  say(WITCH_TAP_LINES[Math.floor(rand() * WITCH_TAP_LINES.length)]);
+});
+setInterval(() => {
+  if (!witchShown() || idleNagged || !$("overlay").hidden) return;
+  if (Date.now() - lastTapAt > 30000) {
+    idleNagged = true;
+    setFace(rand() < .5 ? "sleepy" : "bored", 2500);
+    setTimeout(() => { if (idleNagged) setFace("bored"); }, 2600);
+    say(IDLE_LINES[Math.floor(rand() * IDLE_LINES.length)], 3600);
+  }
+}, 5000);
+
+function showBuddy() {
+  if (!state.witch.met || state.taps < 100) { $("buddy").hidden = true; return; }
+  if (!buddySvg()) $("wfx").innerHTML = witchSVG("buddy");
+  dressWitch(buddySvg());
+  buddySvg().dataset.face = baseFace();
+  $("buddy").hidden = false;
+}
+function updateWitch(announce) {
+  const l = witchLevel();
+  if (state.taps < 100) return;
+  if (l > (state.witch.lvl || 0)) {
+    state.witch.lvl = l;
+    save();
+    if (announce && state.witch.met) {
+      toast("🧙", "Lumi's new outfit", OUTFITS[l].name, "Look at her go!");
+      setTimeout(() => { if (witchShown()) { react("big"); floaties(8, ["✨", "💖"]); say(OUTFITS[l].part, 4000); } }, 400);
+    }
+  }
+  if (state.witch.met) dressWitch(buddySvg());
+}
+function openWitchIntro() {
+  if (state.witch.met || !$("witchDlg").hidden) return;
+  if (!$("overlay").hidden || !$("nameDlg").hidden) { setTimeout(openWitchIntro, 1500); return; }
+  $("introArt").innerHTML = witchSVG("intro");
+  dressWitch($("introArt").querySelector(".witch"));
+  $("introArt").querySelector(".witch").dataset.face = "happy";
+  $("library").hidden = true; $("board").hidden = true;
+  $("witchDlg").hidden = false;
+  playAch();
+  witchOpenedAt = Date.now();
+  $("witchDlg").focus();
+}
+let witchOpenedAt = 0;
+function closeWitchIntro() {
+  if (Date.now() - witchOpenedAt < 900) return;
+  $("witchDlg").hidden = true;
+  state.witch.met = true;
+  state.witch.lvl = witchLevel();
+  save();
+  showBuddy();
+  setTimeout(() => { react("hop"); floaties(5, ["💖", "✨"]); say("Hi! Let's find something rare together!", 3600); }, 500);
+}
+$("witchOk").addEventListener("click", closeWitchIntro);
+
+/* ---------- award library: extra sections ---------- */
+function achRow(a, need, have, unit) {
+  const got = state.ach[a.id];
+  const theme = themeById(a.theme);
+  const date = got ? new Date(got).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "";
+  const left = Math.max(0, need - have);
+  return `<li class="slot ach${got ? "" : " locked"}">
+    <div class="medal" aria-hidden="true">${got ? a.emoji : "?"}</div>
+    <div class="info">
+      <p class="name">${got ? a.title : "???"}</p>
+      <p class="meta">${got ? `Unlocked ${date} · theme: ${theme.name}` : `${left.toLocaleString("en-US")} ${unit} to go · unlocks a theme`}</p>
+    </div>
+    <span class="tier">${need.toLocaleString("en-US")} ${unit}</span>
+  </li>`;
+}
+function renderExtras() {
+  const achCount = ACH_ALL.filter(a => state.ach[a.id]).length;
+  $("libSub").textContent = `${foundCount()} of ${RARES.length} rare finds · ${achCount} of ${ACH_ALL.length} achievements`;
+  $("skipRepeats").checked = state.skipRepeats;
+  $("tapAch").innerHTML = TAP_ACH.map(a => achRow(a, a.n, state.taps, "taps")).join("");
+  $("streakAch").innerHTML = STREAK_ACH.map(a => achRow(a, a.days, state.streak.best || state.streak.count, "days")).join("");
+
+  const met = state.witch.met && state.taps >= 100;
+  const l = witchLevel();
+  const nextO = OUTFITS[l + 1];
+  const extras = [];
+  if ((state.streak.best || 0) >= 7) extras.push("ribbon");
+  if ((state.streak.best || 0) >= 14) extras.push("cat friend");
+  if ((state.streak.best || 0) >= 30) extras.push("bat friend");
+  $("witchInfo").innerHTML = `
+    <div class="mini${met ? "" : " locked"}">${witchSVG("mini")}</div>
+    <div>
+      <p class="wn">${met ? "Lumi the pocket witch" : "???"}</p>
+      <p class="wl">${met ? `Outfit level ${l + 1} of ${OUTFITS.length}: ${OUTFITS[l].name}` : "A friend appears at 100 taps."}</p>
+      ${met && nextO ? `<p class="wl">Next: ${nextO.name.toLowerCase()} at ${nextO.at.toLocaleString("en-US")} taps</p>` : ""}
+      ${met && extras.length ? `<p class="wl">Streak extras: ${extras.join(", ")}</p>` : ""}
+      ${met ? `<p class="wl">${(state.streak.best || 0) < 7 ? "Streak extras unlock at 7, 14 and 30 days." : ""}</p>` : ""}
+      <div class="pips">${OUTFITS.map((_, i) => `<span class="${met && i <= l ? "on" : ""}"></span>`).join("")}</div>
+    </div>`;
+  const mini = $("witchInfo").querySelector(".witch");
+  if (met) dressWitch(mini);
+
+  $("themes").innerHTML = THEMES.map(t => {
+    const open = themeUnlocked(t);
+    const src = t.unlock ? ACH_ALL.find(a => a.id === t.unlock) : null;
+    const how = !src ? "Always available" : open ? "Unlocked" : `🔒 ${src.title} (${src.n ? src.n.toLocaleString("en-US") + " taps" : src.days + "-day streak"})`;
+    return `<button type="button" class="theme-chip${state.theme === t.id ? " on" : ""}${open ? "" : " locked"}" data-theme-id="${t.id}" ${open ? "" : 'aria-disabled="true"'}>
+      <span class="sw" style="background: linear-gradient(135deg, ${t.sw[0]} 0 50%, ${t.sw[1]} 50% 100%)"></span>
+      <span><span class="tn">${t.name}${state.theme === t.id ? " ✓" : ""}</span><span class="tu">${how}</span></span>
+    </button>`;
+  }).join("");
+}
+$("themes").addEventListener("click", e => {
+  const b = e.target.closest(".theme-chip");
+  if (!b) return;
+  const t = themeById(b.dataset.themeId);
+  if (!themeUnlocked(t)) { toast("🔒", "Locked theme", t.name, b.querySelector(".tu").textContent.replace("🔒 ", "Unlock with ")); return; }
+  applySkin(t.id);
+  renderExtras();
+});
+
+/* ---------- start-up ---------- */
+applySkin(state.theme);
+renderMute();
+updateStreak();
+const quietStreak = checkStreakAch(true);
+const quietTaps = checkTapAch(true);
+if (quietStreak + quietTaps > 0 && state.taps > 0) setTimeout(() => toast("🏆", "Welcome back", "You've unlocked " + (quietStreak + quietTaps) + " achievement" + (quietStreak + quietTaps > 1 ? "s" : ""), "See them and their themes in the award library."), 1200);
+if (!state.hintDone) $("firstHint").hidden = false;
+showBuddy();
+if (state.taps >= 100 && !state.witch.met) setTimeout(openWitchIntro, 1500);
+
+$("count").textContent = state.taps === 1 ? "1 tap" : state.taps.toLocaleString("en-US") + " taps";
+updateBadge();
+showName();
+if (previewMode()) openLibrary();
+else if (!state.name) openNameDlg();
+startOnline();
+</script>
+
+</body></html>
