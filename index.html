@@ -902,6 +902,22 @@ kbd { font-family: var(--body); font-weight: 800; border: 1px solid var(--line);
 .wish-pick span { font-size: 28px; }
 .wish-pick small { color: var(--muted); font-size: .7rem; }
 .wish-pick:hover { border-color: var(--mood); }
+/* tiers, natural vs summoned */
+.tier-head { list-style: none; margin: 8px 0 -2px; font: 800 .72rem var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.tier-head.tier-legend { color: #d9a21a; }
+.tier-head.tier-beyond { color: #a46bff; }
+.nat-tag, .sum-tag { display: inline-block; vertical-align: 2px; margin-left: 4px; font: 800 .66rem var(--body); letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+.nat-tag { color: #3a2508; background: linear-gradient(90deg, #ffe08a, #ffb020, #ffe08a); background-size: 200% 100%; animation: shimmer 3s linear infinite; }
+.sum-tag { color: var(--fg); background: var(--locked); }
+.slot.natural-legend { border-color: #ffb020; box-shadow: 0 0 0 2px #ffb02055, 0 0 26px -6px #ffb020; }
+.op-tag { display: inline-block; vertical-align: 2px; margin-left: 4px; font: 800 .62rem var(--body); letter-spacing: .06em; text-transform: uppercase; color: #fff; padding: 2px 7px; border-radius: 999px; background: linear-gradient(90deg, #ff4fd8, #ffb020); }
+.bag-item.guide.op { box-shadow: 0 0 0 2px #ff4fd844, 0 0 24px -8px #ff4fd8; }
+.wish-pick.legend { border-color: #ffb020; background: #ffb0200f; }
+.wish-choose.crown .qline { color: #d9a21a; }
+.overlay.summoned .odds { background: #00000033; }
+.overlay.natural-legend .odds { color: #3a2508; background: linear-gradient(90deg, #ffe08a, #ffb020, #ffe08a); background-size: 200% 100%; animation: shimmer 3s linear infinite; border-color: transparent; }
+@media (prefers-reduced-motion: reduce) { .nat-tag, .overlay.natural-legend .odds { animation: none; } }
+
 /* drop toasts glow by rarity */
 .toast.t-uncommon { box-shadow: 0 18px 40px -18px #0008, 0 0 0 3px #2fbf7166; }
 .toast.t-rare { box-shadow: 0 18px 40px -18px #0008, 0 0 0 3px #4d7cff77; }
@@ -2468,27 +2484,39 @@ function rand() {
     return (a[0] * 2097152 + (a[1] >>> 11)) / 9007199254740992;
   } catch (_) { return Math.random(); }
 }
-/* Luck multiplies the chance of every rare find EXCEPT The Singularity, which always
-   stays a true 1 in 1,000,000,000. If the boosted chances add up past 100%, a rare find
-   is certain and the tier is picked in proportion to its boosted chance. */
+/* Three groups of rare finds:
+   - The Singularity: only a natural roll, nothing can touch it.
+   - Legend tier: Ascension, The Lost Vault, First Contact, The Treasure Map.
+     Always their natural odds. Only Crown of Fate and Legend's Call can summon them.
+   - Collectible tier: Diamond, Dragon Egg, Fingers on Fire, Four-Leaf Clover, Shooting Star.
+     Luck boosts and the normal guarantee powers work here. */
+const LEGEND_IDS = ["ascend", "vault", "alien", "map"];
+const COLLECT_IDS = ["diamond", "egg", "phoenix", "clover", "star"];
+const tierOf = t => t.id === "singularity" ? "beyond" : LEGEND_IDS.includes(t.id) ? "legend" : "collect";
+const legendTier = () => RARES.filter(t => LEGEND_IDS.includes(t.id));
+const collectTier = () => RARES.filter(t => COLLECT_IDS.includes(t.id));
+/* one Collectible-tier find, picked by their real relative odds (so mostly Shooting Stars) */
+function pickCollectible() {
+  const pool = collectTier(), w = pool.map(t => 1 / t.odds), total = w.reduce((a, b) => a + b, 0);
+  let r = rand() * total;
+  for (let i = 0; i < pool.length; i++) { if ((r -= w[i]) < 0) return pool[i]; }
+  return pool[pool.length - 1];
+}
 function rollRare(mult = 1) {
-  if (mult > 1) {
-    const sing = RARES.find(t => t.id === "singularity");
-    if (rand() < 1 / sing.odds) return sing;          // unboosted, always
-    const pool = RARES.filter(t => t.id !== "singularity");
-    const w = pool.map(t => mult / t.odds);
-    const total = w.reduce((a, b) => a + b, 0);
-    const r = rand() * Math.max(1, total);
-    let acc = 0;
-    for (let i = 0; i < pool.length; i++) { acc += w[i]; if (r < acc) return pool[i]; }
-    return null;
-  }
+  // The Singularity and the Legend tier: natural odds, always, whatever the luck
   const r = rand();
   let edge = 0;
   for (const t of RARES) {
+    if (COLLECT_IDS.includes(t.id)) continue;
     edge += 1 / t.odds;
     if (r < edge) return t;
   }
+  // Collectible tier: luck multiplies these; past 100% a find is certain, picked by boosted weight
+  const pool = collectTier();
+  const w = pool.map(t => Math.max(1, mult) / t.odds);
+  const total = w.reduce((a, b) => a + b, 0);
+  let r2 = rand() * Math.max(1, total);
+  for (let i = 0; i < pool.length; i++) { if ((r2 -= w[i]) < 0) return pool[i]; }
   return null;
 }
 
@@ -3280,16 +3308,19 @@ function next(auto) {
   if (state.streak.last !== dayKey()) { updateStreak(); checkStreakAch(false); }
 
   const rare = nextRare();
+  const summoned = !!rare && lastSummoned;
   if (rare) {
-    const label = "✦ Rare find · " + fmtOdds(rare.odds) + " ✦";
+    const label = summoned ? "👑 Summoned · " + rare.title
+      : tierOf(rare) === "legend" ? "✦ Natural Legend find · " + fmtOdds(rare.odds) + " ✦"
+      : "✦ Rare find · " + fmtOdds(rare.odds) + " ✦";
     setMood(rare.color);
     show(rare.emoji, rare.line, label, true);
     const owned = !!state.awards[rare.id];
-    grant(rare);
+    grant(rare, summoned);
     result = { emoji: rare.emoji, sentence: rare.line, label, rare, color: rare.color };
     const wasBored = state.dry >= BORED_AFTER;
     state.dry = 0;
-    if (owned && rare.odds < 1000 && hauling()) {
+    if (owned && !summoned && rare.odds < 1000 && hauling()) {
       // Haul Mode: only brand-new finds and finds of 1 in 1,000 or rarer pop up; the rest go into the sack
       addHaul("rares", rare.id, rare.emoji, rare.title);
     } else {
@@ -3300,7 +3331,7 @@ function next(auto) {
       witchOnRare(rare, wasBored);
     } else {
       pendingWitch = () => witchOnRare(rare, wasBored);
-      celebrate(rare);
+      celebrate(rare, false, summoned);
     }
     }
   } else {
@@ -3324,9 +3355,12 @@ function next(auto) {
 }
 
 /* ---- awards ---- */
-function grant(t) {
+function grant(t, summoned) {
   const prev = state.awards[t.id];
-  state.awards[t.id] = { count: (prev ? prev.count : 0) + 1, first: prev ? prev.first : new Date().toISOString() };
+  state.awards[t.id] = { ...(prev || {}), count: (prev ? prev.count : 0) + 1, first: prev ? prev.first : new Date().toISOString() };
+  const a = state.awards[t.id];
+  a.summoned = (a.summoned || 0) + (summoned ? 1 : 0);
+  if (!summoned && !a.naturalFirst) a.naturalFirst = new Date().toISOString();
   save();
   updateBadge();
 }
@@ -3363,11 +3397,13 @@ function finishStep(update, html) {
   $("claim").hidden = false;
   $("claim").focus();
 }
-function celebrate(t, preview) {
+const TIER_LABEL = { beyond: "", legend: "Legend tier · ", collect: "Collectible · " };
+function celebrate(t, preview, summoned) {
   lastFocus = document.activeElement;
   const ov = $("overlay");
-  ov.className = "overlay t-" + t.id;
-  $("podds").textContent = (preview ? "Preview · " : "") + fmtOdds(t.odds);
+  const natLegend = !preview && !summoned && tierOf(t) === "legend";
+  ov.className = "overlay t-" + t.id + (summoned ? " summoned" : "") + (natLegend ? " natural-legend" : "");
+  $("podds").textContent = (preview ? "Preview · " : "") + (summoned ? "👑 Summoned · " : natLegend ? "✦ Natural · " : "") + TIER_LABEL[tierOf(t)] + fmtOdds(t.odds);
   $("pgreet").textContent = t.greet;
   $("pemoji").textContent = t.emoji;
   $("ptitle").textContent = t.title;
@@ -3421,13 +3457,22 @@ function closeOverlay() {
 const previewMode = () => location.hash === "#preview";
 function renderLibrary() {
   $("libSub").textContent = foundCount() + " of " + RARES.length + " rare finds collected";
+  const HEAD = { beyond: "Beyond · nothing can touch it", legend: "Legend tier · only Crown of Fate and Legend's Call can summon these", collect: "Collectible tier · luck and normal powers work here" };
+  let lastTier = "";
   $("slots").innerHTML = RARES.map(t => {
     const got = state.awards[t.id];
+    const tier = tierOf(t);
+    const head = tier !== lastTier ? `<li class="tier-head tier-${tier}">${HEAD[tier]}</li>` : "";
+    lastTier = tier;
     const date = got ? new Date(got.first).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "";
-    return `<li class="slot t-${t.id}${got ? "" : " locked"}">
+    const summ = got ? (got.summoned || 0) : 0, nat = got ? got.count - summ : 0;
+    const tag = !got || tier !== "legend" ? (summ ? `<span class="sum-tag">👑 ${summ} summoned</span>` : "")
+      : nat > 0 ? `<span class="nat-tag">✦ Natural find</span>${summ ? `<span class="sum-tag">👑 ${summ} summoned</span>` : ""}`
+      : `<span class="sum-tag">👑 Summoned</span>`;
+    return head + `<li class="slot t-${t.id}${got ? "" : " locked"}${got && tier === "legend" && nat > 0 ? " natural-legend" : ""}">
       <div class="medal" aria-hidden="true">${got ? t.emoji : "?"}</div>
       <div class="info">
-        <p class="name">${got ? t.award : "???"}</p>
+        <p class="name">${got ? t.award : "???"} ${tag}</p>
         <p class="meta">${got ? `${t.title} · found ${date}${got.count > 1 ? " · ×" + got.count : ""}` : "Not found yet"}</p>
         ${got && got.extra && STEPS[t.id].summary(got.extra) ? `<p class="extra">${STEPS[t.id].summary(got.extra)}</p>` : ""}
         ${previewMode() ? `<button class="peek" type="button" data-id="${t.id}">Preview</button>` : ""}
@@ -4387,11 +4432,14 @@ const POWERS = [
   { id: "magnet",    group: "ability", rarity: "rare",      w: 5,   emoji: "🧲", name: "Rare Magnet",    fx: { type: "luck", mult: 25, taps: 15 } },
   { id: "overdrive", group: "ability", rarity: "epic",      w: 2.5, emoji: "🚀", name: "Overdrive",      fx: { type: "luck", mult: 50, taps: 40 } },
   { id: "warp",      group: "ability", rarity: "epic",      w: 2,   emoji: "⏩", name: "Fast Forward",   fx: { type: "taps", mult: 10, taps: 60 } },
-  { id: "midas",     group: "ability", rarity: "legendary", w: .8,  emoji: "👑", name: "Midas Touch",    fx: { type: "luck", mult: 100, taps: 100 } },
+  { id: "midas",     group: "ability", rarity: "legendary", w: .8,  emoji: "🪙", name: "Midas Touch",    fx: { type: "luck", mult: 100, taps: 100 } },
   { id: "clone",     group: "ability", rarity: "legendary", w: .7,  emoji: "👥", name: "Clone Army",     fx: { type: "taps", mult: 50, taps: 100 } },
   { id: "fate",      group: "ability", rarity: "mythic",    w: .1,  emoji: "✋", name: "Hand of Fate",   fx: { type: "guarantee", mode: "uniform", count: 1 },
-    note: "Your next tap is a guaranteed rare find, and all nine below The Singularity are equally likely: a 1 in 9 shot at Ascension." },
+    note: "Your next tap is a guaranteed Collectible-tier find, rolled by their real relative odds." },
   { id: "surge",     group: "ability", rarity: "mythic",    w: .1,  emoji: "💥", name: "Cosmic Surge",   fx: { type: "luck", mult: 1000, taps: 50 } },
+  // one of the two truly OP powers: weight tuned to about 1 per 400,000 of your own taps
+  { id: "crown",     group: "ability", rarity: "mythic",    w: 0.0972973, emoji: "👑", name: "Crown of Fate", fx: { type: "guarantee", mode: "crown" }, op: true,
+    note: "Choose ANY rare find except The Singularity, Legend tier included, and get it on your next tap. It arrives 👑 Summoned. Single use." },
   // ---- Relics (time-based and special) ----
   { id: "candle",    group: "relic",   rarity: "common",    w: 30,  emoji: "🕯️", name: "Focus Candle",   fx: { type: "luckTime", mult: 3, min: 3 } },
   { id: "hourglass", group: "relic",   rarity: "uncommon",  w: 20,  emoji: "⌛", name: "Hourglass",      fx: { type: "luckTime", mult: 5, min: 5 } },
@@ -4410,11 +4458,14 @@ const POWERS = [
   { id: "gravity",   group: "cosmic",  rarity: "epic",      w: 30,  emoji: "🪐", name: "Gravity Well",   fx: { type: "luckTime", mult: 100, min: 30 } },
   { id: "megaclone", group: "cosmic",  rarity: "epic",      w: 25,  emoji: "🧬", name: "Mega Clone",     fx: { type: "taps", mult: 100, taps: 200 } },
   { id: "wishwell",  group: "cosmic",  rarity: "legendary", w: 30,  emoji: "⛲", name: "Wishing Well",   fx: { type: "guarantee", mode: "choose", count: 1 },
-    note: "Choose any rare find except The Singularity. You get it on your next tap." },
+    note: "Choose any Collectible-tier find (Diamond, Dragon Egg, Fingers on Fire, Four-Leaf Clover or Shooting Star). You get it on your next tap." },
   { id: "starfall",  group: "cosmic",  rarity: "legendary", w: 13,  emoji: "☄️", name: "Starfall",       fx: { type: "guarantee", mode: "weighted", count: 10 },
-    note: "Your next 10 taps are all rare finds." },
-  { id: "grand",     group: "cosmic",  rarity: "mythic",    w: 2,   emoji: "🏛️", name: "Grand Collection", fx: { type: "guarantee", list: ["ascend", "vault", "alien", "map", "diamond", "egg", "phoenix", "clover", "star"] },
-    note: "Your next 9 taps give you one of every rare find below The Singularity, from Ascension all the way down to the Shooting Star." }
+    note: "Your next 10 taps are all Collectible-tier finds, rolled by their real relative odds." },
+  { id: "grand",     group: "cosmic",  rarity: "mythic",    w: 2,   emoji: "🏛️", name: "Grand Collection", fx: { type: "guarantee", list: ["diamond", "egg", "phoenix", "clover", "star"] },
+    note: "Your next 5 taps give you the whole Collectible tier: Diamond, Dragon Egg, Fingers on Fire, Four-Leaf Clover and Shooting Star." },
+  // the other truly OP power: weight tuned to about 1 per 400,000 of your own taps
+  { id: "legendcall", group: "cosmic", rarity: "mythic",    w: 2.5641026, emoji: "🌠", name: "Legend's Call", fx: { type: "guarantee", mode: "legend" }, op: true,
+    note: "Your next tap is a random Legend-tier find: Ascension, The Lost Vault, First Contact or The Treasure Map. It arrives 👑 Summoned. Single use." }
 ];
 const powerById = id => POWERS.find(p => p.id === id);
 function powerDesc(p) {
@@ -4445,7 +4496,8 @@ if (typeof state.rollTaps !== "number") state.rollTaps = state.taps;
 if (state.perks && state.perks.sense) { state.perks.streak = 1; delete state.perks.sense; }
 // older saves: the Singularity Seed became the Grand Collection, and no queued guarantee may be The Singularity
 if (state.inv.seed) { state.inv.grand = (state.inv.grand || 0) + state.inv.seed; delete state.inv.seed; }
-state.guar = state.guar.filter(m => m !== "singularity");
+// older saves: queued guarantees may only target the Collectible tier (or be summons)
+state.guar = state.guar.filter(m => m === "uniform" || m === "weighted" || COLLECT_IDS.includes(m) || (typeof m === "string" && m.startsWith("summon:") && m !== "summon:singularity"));
 
 function liveBoosts() {
   const now = Date.now();
@@ -4464,14 +4516,22 @@ function currentTapMult() {
 /* Power drop odds are fixed: nothing changes how often rolls happen or what they give. */
 function dropEvery(g) { return POWER_GROUPS[g].every; }
 /* The rare find for this tap: a queued guarantee first, otherwise a luck-boosted roll. */
+let lastSummoned = false;
 function nextRare() {
-  // guarantees never hand out The Singularity: it can only come from a normal 1-in-a-billion roll
-  const pool = RARES.filter(t => t.id !== "singularity");
+  lastSummoned = false;
   while (state.guar.length) {
     const mode = state.guar.shift();
-    if (mode === "uniform") return pool[Math.floor(rand() * pool.length)];
-    if (mode === "weighted") { const t = rollRare(1e9); if (t && t.id !== "singularity") return t; return pool[pool.length - 1]; }
-    const t = pool.find(x => x.id === mode);
+    // Hand of Fate and Starfall: a Collectible-tier find by real relative odds
+    if (mode === "uniform" || mode === "weighted") return pickCollectible();
+    // Crown of Fate ("summon:<id>") and Legend's Call ("summon:legend"): the only way into the Legend tier
+    if (typeof mode === "string" && mode.startsWith("summon:")) {
+      const id = mode.slice(7);
+      const t = id === "legend" ? legendTier()[Math.floor(rand() * LEGEND_IDS.length)] : RARES.find(x => x.id === id && x.id !== "singularity");
+      if (t) { lastSummoned = true; return t; }
+      continue;
+    }
+    // Wishing Well and Grand Collection: Collectible tier only
+    const t = collectTier().find(x => x.id === mode);
     if (t) return t;
   }
   return rollRare(currentLuck());
@@ -4482,7 +4542,8 @@ function applyFx(f, p) {
   else if (f.type === "luckTime") state.boosts.push({ pid: p.id, kind: "luck", mult: f.mult, until: now + f.min * 60000, max: f.min * 60000 });
   else if (f.type === "auto") state.boosts.push({ pid: p.id, kind: "auto", rate: f.rate, until: now + f.sec * 1000, max: f.sec * 1000 });
   else if (f.type === "guarantee") {
-    if (f.list) f.list.forEach(m => state.guar.push(m));
+    if (f.mode === "legend") state.guar.push("summon:legend");
+    else if (f.list) f.list.forEach(m => state.guar.push(m));
     else for (let i = 0; i < f.count; i++) state.guar.push(f.mode);
   }
   else if (f.type === "shield") state.shields = (state.shields || 0) + 1;
@@ -4491,7 +4552,7 @@ function applyFx(f, p) {
 function usePower(id, choice) {
   const p = powerById(id);
   if (!p || !state.inv[id]) return;
-  if (p.fx.type === "guarantee" && p.fx.mode === "choose" && !choice) { renderWishChooser(); return; }
+  if (p.fx.type === "guarantee" && (p.fx.mode === "choose" || p.fx.mode === "crown") && !choice) { renderWishChooser(p.id); return; }
   if (p.fx.type === "key") {
     const locked = THEMES.filter(t => !themeUnlocked(t));
     if (!locked.length) { toast("🗝️", "Nothing to unlock", "Every theme is already yours", "Keep the key for later."); return; }
@@ -4499,9 +4560,11 @@ function usePower(id, choice) {
     state.keyThemes.push(t.id);
     toast("🗝️", "Skeleton Key", `${t.name} theme unlocked!`, "Pick it in the award library.", "t-" + p.rarity);
   } else if (choice) {
-    state.guar.push(choice);
-    const t = RARES.find(x => x.id === choice);
-    toast(p.emoji, p.name, `${t.emoji} ${t.title} is coming`, "Tap once to receive it.", "t-" + p.rarity);
+    const crown = p.id === "crown";
+    const t = RARES.find(x => x.id === choice && x.id !== "singularity" && (crown || COLLECT_IDS.includes(x.id)));
+    if (!t) return;
+    state.guar.push(crown ? "summon:" + t.id : t.id);
+    toast(p.emoji, p.name, `${t.emoji} ${t.title} is coming`, crown ? "Tap once to receive it, 👑 Summoned." : "Tap once to receive it.", "t-" + p.rarity);
   } else {
     applyFx(p.fx, p);
     toast(p.emoji, "Power activated", p.name, powerDesc(p), "t-" + p.rarity);
@@ -4671,24 +4734,26 @@ function renderBag() {
       <p class="guide-rule">${info.rule}</p>
       <ul class="bag-list">${POWERS.filter(p => p.group === g).map(p => {
         const c = groupChance(p) * info.chance;
-        return `<li class="bag-item guide" style="--c:${RARITY[p.rarity].color}">
+        const perTaps = Math.round(info.every / c);
+        return `<li class="bag-item guide${p.op ? " op" : ""}" style="--c:${RARITY[p.rarity].color}">
           <span class="bi-emoji" aria-hidden="true">${p.emoji}</span>
-          <div class="bi-info"><p class="bi-name">${p.name}</p><p class="bi-desc">${rarityChip(p.rarity)} ${powerDesc(p)}</p></div>
-          <span class="bi-odds" title="Chance at each roll">${fmtPct(c)}<small>${c < 1 ? "1 in " + Math.round(1 / c).toLocaleString("en-US") : "per roll"}</small></span>
+          <div class="bi-info"><p class="bi-name">${p.name}${p.op ? ` <span class="op-tag">Reaches the Legend tier</span>` : ""}</p><p class="bi-desc">${rarityChip(p.rarity)} ${powerDesc(p)}</p></div>
+          <span class="bi-odds" title="Chance at each roll, and how many of your own taps it takes on average">${fmtPct(c)}<small>1 in ${Math.round(1 / c).toLocaleString("en-US")} rolls</small><small>≈ 1 per ${perTaps.toLocaleString("en-US")} taps</small></span>
         </li>`;
       }).join("")}</ul>`).join("") +
-      `<p class="note">Percent = chance at each roll. Luck multiplies the chance of every rare find except The Singularity, which nothing can boost (and whose odds nobody knows). Luck boosts don't stack: only the strongest active one counts. Tap boosts make each tap count more toward trophies. Drop odds are fixed: only your own real taps count toward ability, relic and cosmic rolls, one per tap, and no booster, blessing or auto-tapper changes that.</p>`;
+      `<p class="note">Odds = chance at each roll, and the average number of your own taps it takes to find one. Luck boosts and the normal guarantee powers (Hand of Fate, Starfall, Wishing Well, Grand Collection) only reach the Collectible tier: Diamond, Dragon Egg, Fingers on Fire, Four-Leaf Clover and Shooting Star. Only 👑 Crown of Fate and 🌠 Legend's Call can reach the Legend tier, and their finds are marked 👑 Summoned. Nothing can touch The Singularity. Luck boosts don't stack: only the strongest active one counts. Drop odds are fixed: only your own real taps count toward rolls.</p>`;
   }
 }
-function renderWishChooser() {
+function renderWishChooser(pid = "wishwell") {
   bagTab = "inv";
-  const choices = RARES.filter(t => t.id !== "singularity");
+  const crown = pid === "crown";
+  const choices = crown ? RARES.filter(t => t.id !== "singularity") : collectTier();
   $("bagInv").innerHTML = `
-    <div class="wish-choose">
-      <p class="qline">⛲ The Wishing Well listens…</p>
-      <p class="bi-desc">Choose the rare find you want on your next tap.</p>
-      <div class="wish-grid">${choices.map(t => `<button type="button" class="wish-pick" data-pick="${t.id}"><span aria-hidden="true">${t.emoji}</span>${t.title}<small>${fmtOdds(t.odds)}</small></button>`).join("")}</div>
-      <button class="linkish" type="button" id="wishCancel">Keep the Wishing Well for later</button>
+    <div class="wish-choose${crown ? " crown" : ""}">
+      <p class="qline">${crown ? "👑 The Crown of Fate awaits your command…" : "⛲ The Wishing Well listens…"}</p>
+      <p class="bi-desc">${crown ? "Choose ANY rare find, Legend tier included. It arrives 👑 Summoned on your next tap." : "Choose a Collectible-tier find for your next tap."}</p>
+      <div class="wish-grid">${choices.map(t => `<button type="button" class="wish-pick${tierOf(t) === "legend" ? " legend" : ""}" data-pick="${t.id}" data-pid="${pid}"><span aria-hidden="true">${t.emoji}</span>${t.title}<small>${tierOf(t) === "legend" ? "Legend · " : ""}${fmtOdds(t.odds)}</small></button>`).join("")}</div>
+      <button class="linkish" type="button" id="wishCancel">Keep the ${crown ? "Crown" : "Wishing Well"} for later</button>
     </div>`;
   $("bagInv").querySelector(".wish-pick").focus();
 }
@@ -4701,7 +4766,7 @@ $("bag").addEventListener("click", e => {
   const use = e.target.closest("[data-use]");
   if (use) { usePower(use.dataset.use); return; }
   const pick = e.target.closest("[data-pick]");
-  if (pick) { usePower("wishwell", pick.dataset.pick); return; }
+  if (pick) { usePower(pick.dataset.pid || "wishwell", pick.dataset.pick); return; }
   if (e.target.id === "wishCancel") renderBag();
 });
 updateBagBadge();
